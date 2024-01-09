@@ -60,6 +60,8 @@ def save_html(content_folder, html):
 
 def download_complementary(complementary_folder, complementary, session=None):
   ydl_opts = ytdlp_options(complementary_folder)
+  if session:
+    ydl_opts = ytdlp_options(complementary_folder, session)
   with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     ydl.download([complementary])
 

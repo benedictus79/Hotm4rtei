@@ -13,8 +13,8 @@ def extract_lessons_details(module_folder, lessons):
     for hash in hashes:
       content_lesson = hotmartsession.get(f'https://api-club.cb.hotmart.com/rest/v3/page/{hash}?pageHash={hash}').json()
       lesson_title = f'''{i:03d} - {clear_folder_name(content_lesson['name'])}'''
-      lesson_folder = create_folder(shorten_folder_name(concat_path(module_folder, lesson_title)))
-      lesson_detail[content_lesson['name']] = {
+      lesson_folder = create_folder(shorten_folder_name(concat_path(module_folder, clear_folder_name(lesson_title))))
+      lesson_detail[clear_folder_name(content_lesson['name'])] = {
         'path': lesson_folder,
         'content': content_lesson.get('content', ''),
         'media': content_lesson.get('mediasSrc', []),
@@ -65,15 +65,14 @@ def find_complementary_readings(lessons, session):
 def find_content(lessons, session):
   for lesson_name, lesson_data in lessons.items():
     if lesson_data['content']:
+      content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
+      save_html(content_folder, lesson_data['content'])
       soup = BeautifulSoup(lesson_data['content'], 'html.parser')
       iframe = soup.find('iframe')
       if iframe and is_vimeo_iframe(iframe):
         video_url = iframe['src']
-        output_path = shorten_folder_name(concat_path(lesson_data['path'], clear_folder_name(f'{lesson_name}.mp4')))
+        output_path = concat_path(lesson_data['path'], f'{lesson_name}.mp4')
         download_complementary(output_path, video_url, session)
-
-      content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
-      save_html(content_folder, lesson_data['content'])
 
 
 def find_attachments(lessons, session):
