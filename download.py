@@ -51,10 +51,10 @@ def download_attachments(material_folder, attachments, session):
 
 
 def save_html(content_folder, html):
-  file_path = shorten_folder_name(os.path.join(content_folder, clear_folder_name('conteudo' + ".html")))
+  file_path = shorten_folder_name(os.path.join(content_folder, clear_folder_name('conteudo' + '.html')))
 
   if not os.path.exists(file_path):
-    with open(file_path, "w", encoding="utf-8") as file:
+    with open(file_path, 'w', encoding='utf-8') as file:
       file.write(str(html))
 
 
@@ -62,3 +62,7 @@ def download_complementary(complementary_folder, complementary, session=None):
   ydl_opts = ytdlp_options(complementary_folder)
   with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     ydl.download([complementary])
+
+
+def is_vimeo_iframe(iframe):
+  return iframe is not None and 'src' in iframe.attrs and 'vimeo' in iframe['src']

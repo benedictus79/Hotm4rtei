@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from utils import benedictus_ascii_art, clear_screen
+from utils import benedictus_ascii_art, clear_screen, log_error
 
 
 hotmartsession = requests.Session()
@@ -27,7 +27,12 @@ def check_token(access_token):
     'token': access_token
   }
   url_check_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/check_token'
-  response = hotmartsession.get(url_check_token, params=params).json()['resources']
+  response = hotmartsession.get(url_check_token, params=params)
+  if response.status_code != 200:
+    msg_warning = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
+    log_error(msg_warning)
+    return
+  response = response.json()['resources']
   courses = {}
 
   for resource in response:
