@@ -9,8 +9,8 @@ hotmartsession = requests.Session()
 def get_token():
   url_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/token'
   benedictus_ascii_art()
-  username = input("email: ")
-  password = input("senha: ")
+  username = input('email: ')
+  password = input('senha: ')
   clear_screen()
   data = {
     'grant_type': 'password',
@@ -39,11 +39,11 @@ def check_token(access_token):
 
 
 def choose_course(courses):
-  print("Cursos disponíveis:")
+  print('Cursos disponíveis:')
   for i, (course_title, course_info) in enumerate(courses.items(), start=1):
-    print(f"{i}. {course_title}")
+    print(f'{i}. {course_title}')
 
-  choice = input("Escolha um curso pelo número: ")
+  choice = input('Escolha um curso pelo número: ')
   selected_course_title = list(courses.keys())[int(choice) - 1]
   selected_course_link = courses[selected_course_title]
   
