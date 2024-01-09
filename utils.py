@@ -15,7 +15,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.2'))
+  print(benedictus.format(name='hotm4rtei', version='Alpha 0.3'))
 
 
 def clear_screen():
