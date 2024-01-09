@@ -23,7 +23,7 @@ def extract_lessons_details(module_folder, lessons):
       }
       if content_lesson.get('type') == 'WEBINAR':
         #lesson_detail[content_lesson['name']]['webinar'] = f'https://webinar.play.hotmart.com/{lesson_detail[content_lesson['name']]['content']}'
-        lesson_detail[content_lesson['name']]['webinar'] = f'https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[content_lesson['name']]['content']}/private'
+        lesson_detail[content_lesson['name']]['webinar'] = f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[content_lesson['name']]['content']}/private'''
         lesson_detail[content_lesson['name']]['content'] = ''
 
   return lesson_detail
