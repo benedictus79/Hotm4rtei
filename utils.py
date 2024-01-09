@@ -32,8 +32,9 @@ def create_folder(folder_name):
 
 
 def clear_folder_name(name):
-  sanitized_name = re.sub(r'[<>:"/\\|?*]', ' ', name)
+  sanitized_name = re.sub(r'[<>:#"/\\|?*]', ' ', name)
   sanitized_name = re.sub(r'\s+', ' ', sanitized_name).strip()
+  sanitized_name = re.sub(r'\.$', '', sanitized_name)
 
   return sanitized_name
 
