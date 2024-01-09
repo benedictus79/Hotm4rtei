@@ -3,7 +3,7 @@
 # Hotm4rtei Script
 
 ## Description
-This Python script is designed so you can attend classes with your materials offline and anywhere!
+This Python script is designed so you can watch the classes with your materials offline and anywhere!
 
 ## Prerequisites
 To run this script, Python must be installed on your machine. The script has been tested and works correctly with Python version 3.12.1.
@@ -28,7 +28,10 @@ After installing all dependencies, you can run the script with the following com
    ```
 
 ## Support
-For questions or support, please contact us at [insert contact information or reference 'Issues' section].
+For questions or support, please feel free to contact us or ask in the issues session.
+Email: benedictus79@disroot.org
+Telegram: https://t.me/benedictus79
+Community: https://t.me/alex4ndriachannel
 
 ## Contributions
 Contributions to the script are welcome. Feel free to create a 'pull request' or discuss improvements in the 'Issues' section.

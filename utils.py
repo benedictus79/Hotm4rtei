@@ -15,7 +15,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.1'))
+  print(benedictus.format(name='hotm4rtei', version='Alpha 0.2'))
 
 
 def clear_screen():
@@ -56,15 +56,14 @@ def concat_path(path, subpath, lesson=None):
 
   if lesson:
     fullpath = os.path.join(path, subpath, lesson)
-    return fullpath
 
   return fullpath
 
 
 def log_error(message):
-  timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+  timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   with open('errosdownload.txt', 'a') as file:
-    file.write(f"{timestamp} - {message}\n")
+    file.write(f'{timestamp} - {message}\n')
 
 
 class SilentLogger(object):

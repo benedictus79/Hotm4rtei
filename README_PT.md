@@ -3,7 +3,7 @@
 # Script Hotm4rtei
 
 ## Descrição
-Este script Python é projetado para você pode assistir às aulas com seus materiais offline e em qualquer lugar!
+Este script Python é projetado para você poder assistir às aulas com seus materiais offline e em qualquer lugar!
 
 ## Pré-requisitos
 Para executar este script, o Python deve estar instalado em sua máquina. O script foi testado e funciona corretamente com a versão 3.12.1 do Python.
@@ -28,7 +28,10 @@ Após instalar todas as dependências, você pode executar o script com o seguin
    ```
 
 ## Suporte
-Para perguntas ou suporte, por favor, entre em contato conosco em [inserir informações de contato ou referência à seção 'Issues'].
+Para perguntas ou suporte, por favor, entre em contato conosco ou sinta-se a vontade para perguntar na sessão issues.
+Email: benedictus79@disroot.org
+Telegram: https://t.me/benedictus79
+Comunidade: https://t.me/alex4ndriachannel
 
 ## Contribuições
 Contribuições para o script são bem-vindas. Sinta-se à vontade para criar um 'pull request' ou discutir melhorias na seção 'Issues'.
