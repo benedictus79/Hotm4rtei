@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import json
 from tqdm import tqdm
-from download import download_attachments, download_complementary, download_video, save_html
+from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html
 from login import hotmartsession, selected_course, token, BeautifulSoup
 from utils import clear_folder_name, concat_path, create_folder, shorten_folder_name
 
@@ -22,7 +22,6 @@ def extract_lessons_details(module_folder, lessons):
         'complementary_readings': content_lesson.get('complementaryReadings', []),
       }
       if content_lesson.get('type') == 'WEBINAR':
-        #lesson_detail[content_lesson['name']]['webinar'] = f'https://webinar.play.hotmart.com/{lesson_detail[content_lesson['name']]['content']}'
         lesson_detail[content_lesson['name']]['webinar'] = f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[content_lesson['name']]['content']}/private'''
         lesson_detail[content_lesson['name']]['content'] = ''
 
@@ -55,6 +54,7 @@ def find_webinar(lessons, session):
       webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
       process_webinar(webinar_folder, i, lesson_data['webinar'], session)
 
+
 def find_complementary_readings(lessons, session):
   for lesson_name, lesson_data in lessons.items():
     if lesson_data['complementary_readings']:
@@ -62,9 +62,16 @@ def find_complementary_readings(lessons, session):
       process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
 
 
-def find_content(lessons):
+def find_content(lessons, session):
   for lesson_name, lesson_data in lessons.items():
     if lesson_data['content']:
+      soup = BeautifulSoup(lesson_data['content'], 'html.parser')
+      iframe = soup.find('iframe')
+      if iframe and is_vimeo_iframe(iframe):
+        video_url = iframe['src']
+        output_path = shorten_folder_name(concat_path(lesson_data['path'], clear_folder_name(f'{lesson_name}.mp4')))
+        download_complementary(output_path, video_url, session)
+
       content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
       save_html(content_folder, lesson_data['content'])
 
@@ -103,7 +110,7 @@ def process_lessons_details(lessons, course_name):
   find_webinar(lessons, hotmartsession)
   find_complementary_readings(lessons, hotmartsession)
   find_attachments(lessons, hotmartsession)
-  find_content(lessons)
+  find_content(lessons, hotmartsession)
 
   return lessons
 
@@ -135,7 +142,8 @@ def redirect_club_hotmart(course_name, access_token):
   hotmartsession.headers['club'] = course_name
   response = hotmartsession.get('https://api-club.cb.hotmart.com/rest/v3/navigation').json()
   modules = response['modules']
-  list_modules(course_name, modules)
+  filtered_modules = [module for module in modules if not module['locked']]
+  list_modules(course_name, filtered_modules)
 
 
 if __name__ == '__main__':
