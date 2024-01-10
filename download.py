@@ -11,7 +11,7 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
-    'concurrent_fragment_downloads': 10,
+    'concurrent_fragment_downloads': 9,
     'fragment_retries': 50,
     'fragment_index': None,
     'retry_sleep_functions': {'fragment': 100},
@@ -20,7 +20,7 @@ def ytdlp_options(output_folder, session=None):
     'continuedl': True,
     'extractor_retries': 60,
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
-    'socket_timeout': 30,
+    'socket_timeout': 60,
   }
   if session:
     options['http_headers'] = session.headers

@@ -1,4 +1,4 @@
-[Read this in Portuguese](README_PT.md)
+[Read this in Portuguese](LEIAME.md)
 
 # Hotm4rtei Script
 

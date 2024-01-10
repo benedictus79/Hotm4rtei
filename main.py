@@ -89,23 +89,41 @@ def find_video(lesson_video):
   if script_tag:
     data = json.loads(script_tag.string)
     media_assets = data.get('props', {}).get('pageProps', {}).get('applicationData', {}).get('mediaAssets', [])
-    urls = [asset.get('url') for asset in media_assets if 'url' in asset]
     return ', '.join([asset.get('url') for asset in media_assets if 'url' in asset])
 
 
-def process_media(media, course_name):
+def process_multiple_media(lesson_name, lesson_info):
+  updated_lesson_info = {}
+  for i, media in enumerate(lesson_info['media'], start=1):
+    lesson_video = hotmartsession.get(media['mediaSrcUrl'])
+    lesson_video = find_video(lesson_video)
+    part_lesson_name = f"{lesson_name} - Parte {i}"
+    updated_lesson_info[part_lesson_name] = lesson_info.copy()
+    updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
+  
+  return updated_lesson_info
+
+
+def process_media(lessons, course_name):
+  updated_lessons = {}
   hotmartsession.headers['user-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
-  lesson_video = hotmartsession.get(media['mediaSrcUrl'])
-  lesson_video = find_video(lesson_video)
 
-  return lesson_video
+  for lesson_name, lesson_info in lessons.items():
+    if len(lesson_info['media']) > 1:
+      updated_lessons.update(process_multiple_media(lesson_name, lesson_info))
+      continue
+
+    lesson_video = hotmartsession.get(lesson_info['media'][0]['mediaSrcUrl'])
+    lesson_video = find_video(lesson_video)
+    updated_lessons[lesson_name] = lesson_info
+    updated_lessons[lesson_name]['media'] = [lesson_video]
+
+  return updated_lessons
 
 
 def process_lessons_details(lessons, course_name):
-  for lesson_name, lesson_info in lessons.items():
-    lesson_media_links = [process_media(media, course_name) for media in lesson_info['media']]
-    lesson_info['media'] = lesson_media_links
+  lessons = process_media(lessons, course_name)
   download_video(lessons, hotmartsession)
   find_webinar(lessons, hotmartsession)
   find_complementary_readings(lessons, hotmartsession)
@@ -125,10 +143,9 @@ def list_modules(course_name, modules):
     for i, module in enumerate(modules, start=1):
       module_folder = extract_modules_details(i, module['name'], main_course_folder)
       if module_folder:
-          lessons = extract_lessons_details(module_folder, module['pages'])
-          future = executor.submit(process_lessons_details, lessons, course_name)
-          futures.append(future)
-
+        lessons = extract_lessons_details(module_folder, module['pages'])
+        future = executor.submit(process_lessons_details, lessons, course_name)
+        futures.append(future)
 
     for future in futures:
       future.result()
