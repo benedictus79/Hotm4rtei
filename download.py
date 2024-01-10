@@ -5,9 +5,6 @@ from login import requests
 
 
 def ytdlp_options(output_folder, session=None):
-  ffmpeg_path = 'ffmpeg'
-  if platform.system() == 'Windows':
-    ffmpeg_path = concat_path(os.getcwd(), 'bin', 'ffmpeg.exe')
   options = {
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'outtmpl': output_folder,
@@ -22,7 +19,6 @@ def ytdlp_options(output_folder, session=None):
     'retries': 60,
     'continuedl': True,
     'extractor_retries': 60,
-    'ffmpeg_location': ffmpeg_path,
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 30,
   }

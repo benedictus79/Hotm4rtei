@@ -15,7 +15,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.3'))
+  print(benedictus.format(name='hotm4rtei', version='Alpha 0.4'))
 
 
 def clear_screen():
@@ -32,7 +32,7 @@ def create_folder(folder_name):
 
 
 def clear_folder_name(name):
-  sanitized_name = re.sub(r'[<>:#"/\\|?*]', ' ', name)
+  sanitized_name = re.sub(r'[<>:"/\\|?*]', ' ', name)
   sanitized_name = re.sub(r'\s+', ' ', sanitized_name).strip()
   sanitized_name = re.sub(r'\.$', '', sanitized_name)
 

@@ -6,7 +6,13 @@
 Este script Python é projetado para você poder assistir às aulas com seus materiais offline e em qualquer lugar!
 
 ## Pré-requisitos
-Para executar este script, o Python deve estar instalado em sua máquina. O script foi testado e funciona corretamente com a versão 3.12.1 do Python.
+
+Para executar este script, os seguintes pré-requisitos devem ser atendidos:
+
+1. **Python**: O script foi testado e funciona corretamente com a versão 3.12.1 do Python. Certifique-se de que o Python está instalado em sua máquina. Você pode baixá-lo do [site oficial do Python](https://www.python.org/downloads/).
+
+2. **FFMpeg**: Este script requer o FFMpeg para processar arquivos de vídeo e áudio. Você pode instalar o FFMpeg a partir do [Site Oficial do FFMpeg](https://ffmpeg.org/download.html) ou utilizar o gerenciador de pacotes do seu Linux. Se você estiver usando o Windows, é recomendado usar a versão completa do lançamento gyan_dev.
+
 
 ## Instalação
 Antes de executar o script, você precisa instalar as dependências necessárias. Siga os passos abaixo para configurar seu ambiente:
