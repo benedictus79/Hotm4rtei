@@ -19,6 +19,11 @@ def get_token():
   }
   response = hotmartsession.post(url_token, data=data)
 
+  if response.status_code != 200:
+    msg_warning = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
+    log_error(msg_warning)
+    return
+
   return response.json()['access_token']
 
 
@@ -28,10 +33,6 @@ def check_token(access_token):
   }
   url_check_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/check_token'
   response = hotmartsession.get(url_check_token, params=params)
-  if response.status_code != 200:
-    msg_warning = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
-    log_error(msg_warning)
-    return
   response = response.json()['resources']
   courses = {}
 
