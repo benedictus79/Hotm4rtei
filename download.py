@@ -1,10 +1,13 @@
+import platform
 import yt_dlp
 from utils import concat_path, create_folder, os, shorten_folder_name, clear_folder_name, SilentLogger
 from login import requests
 
 
 def ytdlp_options(output_folder, session=None):
-  ffmpeg_path = concat_path(os.getcwd(), 'bin', 'ffmpeg.exe')
+  ffmpeg_path = 'ffmpeg'
+  if platform.system() == 'Windows':
+    ffmpeg_path = concat_path(os.getcwd(), 'bin', 'ffmpeg.exe')
   options = {
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'outtmpl': output_folder,
