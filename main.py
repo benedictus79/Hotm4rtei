@@ -95,11 +95,12 @@ def find_video(lesson_video):
 def process_multiple_media(lesson_name, lesson_info):
   updated_lesson_info = {}
   for i, media in enumerate(lesson_info['media'], start=1):
-    lesson_video = hotmartsession.get(media['mediaSrcUrl'])
-    lesson_video = find_video(lesson_video)
-    part_lesson_name = f"{lesson_name} - Parte {i}"
-    updated_lesson_info[part_lesson_name] = lesson_info.copy()
-    updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
+    if lesson_info['media']:
+      lesson_video = hotmartsession.get(media['mediaSrcUrl'])
+      lesson_video = find_video(lesson_video)
+      part_lesson_name = f"{lesson_name} - Parte {i}"
+      updated_lesson_info[part_lesson_name] = lesson_info.copy()
+      updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
   
   return updated_lesson_info
 
@@ -113,11 +114,12 @@ def process_media(lessons, course_name):
     if len(lesson_info['media']) > 1:
       updated_lessons.update(process_multiple_media(lesson_name, lesson_info))
       continue
-
-    lesson_video = hotmartsession.get(lesson_info['media'][0]['mediaSrcUrl'])
-    lesson_video = find_video(lesson_video)
-    updated_lessons[lesson_name] = lesson_info
-    updated_lessons[lesson_name]['media'] = [lesson_video]
+    
+    if lesson_info['media']:
+      lesson_video = hotmartsession.get(lesson_info['media'][0]['mediaSrcUrl'])
+      lesson_video = find_video(lesson_video)
+      updated_lessons[lesson_name] = lesson_info
+      updated_lessons[lesson_name]['media'] = [lesson_video]
 
   return updated_lessons
 
