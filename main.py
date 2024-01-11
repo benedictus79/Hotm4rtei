@@ -34,7 +34,7 @@ def extract_modules_details(index, module_title, main_course_folder):
   return module_folder
 
 
-def process_complementary_readings(complementary_folder, lesson_name, complementarys, session):
+def process_complementary_readings(complementary_folder, complementarys, session):
   for i, complementary in enumerate(complementarys, start=1):
     if complementary.get('siteName') == 'YouTube' or 'youtube' in complementary.get('articleUrl'):
       complementary_title = clear_folder_name(complementary.get('articleName'))
@@ -60,7 +60,7 @@ def find_complementary_readings(lessons, session):
   for lesson_name, lesson_data in lessons.items():
     if lesson_data.get('complementary_readings'):
       complementary_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'complemento')))
-      process_complementary_readings(complementary_folder, lesson_name, lesson_data['complementary_readings'], session)
+      process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
 
 
 def find_content(lessons, session):
