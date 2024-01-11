@@ -34,9 +34,9 @@ def extract_modules_details(index, module_title, main_course_folder):
   return module_folder
 
 
-def process_complementary_readings(complementary_folder, complementarys, session):
+def process_complementary_readings(complementary_folder, lesson_name, complementarys, session):
   for i, complementary in enumerate(complementarys, start=1):
-    if complementary.get('siteName') == 'YouTube':
+    if complementary.get('siteName') == 'YouTube' or 'youtube' in complementary.get('articleUrl'):
       complementary_title = clear_folder_name(complementary.get('articleName'))
       complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
       download_complementary(complementary_folder, complementary.get('articleUrl'))
@@ -58,9 +58,9 @@ def find_webinar(lessons, session):
 
 def find_complementary_readings(lessons, session):
   for lesson_name, lesson_data in lessons.items():
-    if lesson_data['complementary_readings']:
+    if lesson_data.get('complementary_readings'):
       complementary_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'complemento')))
-      process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
+      process_complementary_readings(complementary_folder, lesson_name, lesson_data['complementary_readings'], session)
 
 
 def find_content(lessons, session):
@@ -115,24 +115,25 @@ def process_media(lessons, course_name):
       updated_lessons.update(process_multiple_media(lesson_name, lesson_info))
       continue
     
+    updated_lessons[lesson_name] = lesson_info
+    
     if lesson_info['media']:
       lesson_video = hotmartsession.get(lesson_info['media'][0]['mediaSrcUrl'])
       lesson_video = find_video(lesson_video)
-      updated_lessons[lesson_name] = lesson_info
       updated_lessons[lesson_name]['media'] = [lesson_video]
 
   return updated_lessons
 
 
 def process_lessons_details(lessons, course_name):
-  lessons = process_media(lessons, course_name)
-  download_video(lessons, hotmartsession)
-  find_webinar(lessons, hotmartsession)
-  find_complementary_readings(lessons, hotmartsession)
-  find_attachments(lessons, hotmartsession)
-  find_content(lessons, hotmartsession)
+  processed_lessons = process_media(lessons, course_name)
+  download_video(processed_lessons, hotmartsession)
+  find_webinar(processed_lessons, hotmartsession)
+  find_complementary_readings(processed_lessons, hotmartsession)
+  find_attachments(processed_lessons, hotmartsession)
+  find_content(processed_lessons, hotmartsession)
 
-  return lessons
+  return processed_lessons
 
 
 def list_modules(course_name, modules):
@@ -150,8 +151,8 @@ def list_modules(course_name, modules):
         futures.append(future)
 
     for future in futures:
-      future.result()
       main_progress_bar.update(1)
+      future.result()
 
   main_progress_bar.close()
 

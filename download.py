@@ -11,7 +11,7 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
-    'concurrent_fragment_downloads': 9,
+    'concurrent_fragment_downloads': 10,
     'fragment_retries': 50,
     'fragment_index': None,
     'retry_sleep_functions': {'fragment': 100},
