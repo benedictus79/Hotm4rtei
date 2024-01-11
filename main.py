@@ -1,9 +1,10 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
 from tqdm import tqdm
-from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html
+from threading import RLock
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from login import hotmartsession, selected_course, token, BeautifulSoup
 from utils import clear_folder_name, concat_path, create_folder, shorten_folder_name
+from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -138,23 +139,24 @@ def process_lessons_details(lessons, course_name):
 
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
+  tqdm.set_lock(RLock())
 
-  with ThreadPoolExecutor(max_workers=2) as executor:
+  with ThreadPoolExecutor(max_workers=2, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
     main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
     futures = []
 
     for i, module in enumerate(modules, start=1):
-      module_folder = extract_modules_details(i, module['name'], main_course_folder)
-      if module_folder:
-        lessons = extract_lessons_details(module_folder, module['pages'])
-        future = executor.submit(process_lessons_details, lessons, course_name)
-        futures.append(future)
+        module_folder = extract_modules_details(i, module['name'], main_course_folder)
+        if module_folder:
+            lessons = extract_lessons_details(module_folder, module['pages'])
+            future = executor.submit(process_lessons_details, lessons, course_name)
+            futures.append(future)
 
-    for future in futures:
-      main_progress_bar.update(1)
-      future.result()
+    for future in as_completed(futures):
+        future.result()
+        main_progress_bar.update(1)
 
-  main_progress_bar.close()
+    main_progress_bar.close()
 
 
 def redirect_club_hotmart(course_name, access_token):
