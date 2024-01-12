@@ -1,10 +1,11 @@
 import json
 from tqdm import tqdm
 from threading import RLock
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 from login import hotmartsession, selected_course, token, BeautifulSoup
-from utils import clear_folder_name, concat_path, create_folder, shorten_folder_name
-from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html
+from utils import clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
+from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html, save_link
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -37,16 +38,19 @@ def extract_modules_details(index, module_title, main_course_folder):
 
 def process_complementary_readings(complementary_folder, complementarys, session):
   for i, complementary in enumerate(complementarys, start=1):
-    if complementary.get('siteName') == 'YouTube' or 'youtube' in complementary.get('articleUrl'):
+    article_url = complementary.get('articleUrl')
+    if article_url and 'youtube' in article_url:
       complementary_title = clear_folder_name(complementary.get('articleName'))
       complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
-      download_complementary(complementary_folder, complementary.get('articleUrl'))
+      download_complementary(complementary_folder, article_url)
+    elif article_url:
+      save_link(complementary_folder, i, article_url)
 
 
 def process_webinar(webinar_folder, index, webinar, session):
   response = session.get(webinar).json()
   webinar_link, webinar_title = response['url'], response['name']
-  webinar_folder = concat_path(webinar_folder, f'{index} - {webinar_title}.mp4')
+  webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}.mp4')
   download_complementary(webinar_folder, webinar_link)
 
 
@@ -137,25 +141,24 @@ def process_lessons_details(lessons, course_name):
   return processed_lessons
 
 
+def process_module(module, main_course_folder, course_name):
+  module_folder = extract_modules_details(module['index'], module['name'], main_course_folder)
+  if module_folder:
+    lessons = extract_lessons_details(module_folder, module['pages'])
+    process_lessons_details(lessons, course_name)
+
+
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
   tqdm.set_lock(RLock())
 
+  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
+  partial_functions = [partial(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
+
   with ThreadPoolExecutor(max_workers=2, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
     main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
-    futures = []
-
-    for i, module in enumerate(modules, start=1):
-        module_folder = extract_modules_details(i, module['name'], main_course_folder)
-        if module_folder:
-            lessons = extract_lessons_details(module_folder, module['pages'])
-            future = executor.submit(process_lessons_details, lessons, course_name)
-            futures.append(future)
-
-    for future in as_completed(futures):
-        future.result()
-        main_progress_bar.update(1)
-
+    for _ in executor.map(lambda f: f(), partial_functions):
+      main_progress_bar.update(1)
     main_progress_bar.close()
 
 
@@ -165,6 +168,10 @@ def redirect_club_hotmart(course_name, access_token):
   response = hotmartsession.get('https://api-club.cb.hotmart.com/rest/v3/navigation').json()
   modules = response['modules']
   filtered_modules = [module for module in modules if not module['locked']]
+  modules_locked_names = [module['name'] for module in modules if module['locked']]
+  if modules_locked_names:
+    msg_erro = f'Curso: {course_name} - Modulos Bloqueados: {modules_locked_names}'
+    logger(msg_erro, warning=True)
   list_modules(course_name, filtered_modules)
 
 

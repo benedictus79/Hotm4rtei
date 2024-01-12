@@ -1,7 +1,6 @@
-import platform
 import yt_dlp
-from utils import concat_path, create_folder, os, shorten_folder_name, clear_folder_name, SilentLogger
 from login import requests
+from utils import concat_path, os, shorten_folder_name, clear_folder_name, SilentLogger
 
 
 def ytdlp_options(output_folder, session=None):
@@ -41,8 +40,8 @@ def download_attachments(material_folder, attachments, session):
   for i, attachment in enumerate(attachments, start=1):
     attachments_id = attachment['fileMembershipId']
     filename = attachment['fileName']
-    response = session.get(f'https://api-club.cb.hotmart.com/rest/v3/attachment/{attachments_id}/download?attachmentId={attachments_id}').json()['directDownloadUrl']
-    attachments = requests.get(response, stream=True)
+    response = session.get(f'https://api-club.cb.hotmart.com/rest/v3/attachment/{attachments_id}/download?attachmentId={attachments_id}')
+    attachments = requests.get(response.url, stream=True)
     path = concat_path(material_folder, f'{i:03d} - {filename}')
     with open(path, 'wb') as file:
       for chunk in attachments.iter_content(chunk_size=8192):
@@ -55,6 +54,14 @@ def save_html(content_folder, html):
   if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
       file.write(str(html))
+
+
+def save_link(complementary_folder, index, text_link):
+  file_path = shorten_folder_name(os.path.join(complementary_folder, clear_folder_name(f'{index:03d} - complemento.txt')))
+
+  if not os.path.exists(file_path):
+    with open(file_path, 'w', encoding='utf-8') as file:
+      file.write(str(text_link))
 
 
 def download_complementary(complementary_folder, complementary, session=None):

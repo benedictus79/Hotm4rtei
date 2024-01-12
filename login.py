@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from utils import benedictus_ascii_art, clear_screen, log_error
+from utils import benedictus_ascii_art, clear_screen, logger
 
 
 hotmartsession = requests.Session()
@@ -20,8 +20,8 @@ def get_token():
   response = hotmartsession.post(url_token, data=data)
 
   if response.status_code != 200:
-    msg_warning = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
-    log_error(msg_warning)
+    msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
+    logger(msg_erro, error=True)
     return
 
   return response.json()['access_token']

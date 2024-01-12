@@ -3,7 +3,7 @@
 # Script Hotm4rtei
 
 ## Descrição
-Este script Python é projetado para você poder assistir às aulas com seus materiais offline e em qualquer lugar!
+Este script Python é projetado para você pode assistir às aulas com seus materiais offline e em qualquer lugar!
 
 ## Pré-requisitos
 
