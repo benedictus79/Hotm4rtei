@@ -1,6 +1,6 @@
-from datetime import datetime
 import os
 import re
+from datetime import datetime
 
 
 def benedictus_ascii_art():
@@ -15,7 +15,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.6'))
+  print(benedictus.format(name='hotm4rtei', version='Alpha 0.7'))
 
 
 def clear_screen():
@@ -61,10 +61,19 @@ def concat_path(path, subpath, lesson=None):
   return fullpath
 
 
-def log_error(message):
+def log_to_file(filename, message):
   timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-  with open('errosdownload.txt', 'a') as file:
+  with open(filename, 'a', encoding='UTF-8') as file:
     file.write(f'{timestamp} - {message}\n')
+
+
+def logger(message, error=None, warning=None):
+  if error:
+    log_to_file('hotm4rtei_erros.txt', message)
+    return
+  if warning:
+    log_to_file('hotm4rtei_avisos.txt', message)
+    return
 
 
 class SilentLogger(object):
@@ -72,9 +81,9 @@ class SilentLogger(object):
     pass
 
   def warning(self, msg):
-    log_error(msg)
+    logger(msg, warnig=True)
     pass
 
   def error(self, msg):
-    log_error(msg)
+    logger(msg, error=True)
     pass

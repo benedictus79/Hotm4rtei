@@ -3,7 +3,7 @@
 # Hotm4rtei Script
 
 ## Description
-This Python script is designed so you can watch the classes with your materials offline and anywhere!
+This Python script is designed to let you watch the classes with their materials offline and anywhere!
 
 ## Prerequisites
 
