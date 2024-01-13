@@ -99,7 +99,9 @@ def save_link(complementary_folder, index, text_link):
 
 
 def download_complementary(complementary_folder, complementary, session=None):
-  ydl_opts = ytdlp_options(complementary_folder, session)
+  ydl_opts = ytdlp_options(complementary_folder)
+  if session:
+    ydl_opts = ytdlp_options(complementary_folder, session)
   download = download_with_retries(ydl_opts, complementary)
   if download == '403':
     ydl_opts = check_forbidden(ydl_opts, complementary, session)
