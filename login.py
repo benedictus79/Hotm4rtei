@@ -1,17 +1,20 @@
 import requests
 from bs4 import BeautifulSoup
-from utils import benedictus_ascii_art, clear_screen, logger
+from utils import benedictus_ascii_art, clear_screen, logger, random_sleep
 
 
 hotmartsession = requests.Session()
 
 
-def get_token():
-  url_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/token'
+def credentials():
   benedictus_ascii_art()
   username = input('email: ')
   password = input('senha: ')
   clear_screen()
+  return username, password
+
+
+def get_token(url_token, username, password):
   data = {
     'grant_type': 'password',
     'username': username,
@@ -22,7 +25,7 @@ def get_token():
   if response.status_code != 200:
     msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
     logger(msg_erro, error=True)
-    return
+    return None
 
   return response.json()['access_token']
 
@@ -33,6 +36,10 @@ def check_token(access_token):
   }
   url_check_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/check_token'
   response = hotmartsession.get(url_check_token, params=params)
+  if response.status_code != 200:
+    msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
+    logger(msg_erro, error=True)
+    return None
   response = response.json()['resources']
   courses = {}
 
@@ -46,16 +53,19 @@ def check_token(access_token):
 
 def choose_course(courses):
   print('Cursos disponíveis:')
+  if courses is None:return None, None
   for i, (course_title, course_info) in enumerate(courses.items(), start=1):
     print(f'{i}. {course_title}')
 
   choice = input('Escolha um curso pelo número: ')
+  if not choice.isdigit():return None, None
   selected_course_title = list(courses.keys())[int(choice) - 1]
   selected_course_link = courses[selected_course_title]
   
   return selected_course_title, selected_course_link
 
-
-token = get_token()
+username, password = credentials()
+url_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/token'
+token = get_token(url_token, username, password)
 courses = check_token(token)
-selected_course = choose_course(courses)
+course_name, course_link = choose_course(courses)
