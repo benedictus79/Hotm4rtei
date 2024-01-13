@@ -3,9 +3,10 @@ from tqdm import tqdm
 from threading import RLock
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
-from login import hotmartsession, selected_course, token, BeautifulSoup
-from utils import clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
-from download import download_attachments, download_complementary, download_video, is_vimeo_iframe, save_html, save_link
+from connection import connect
+from login import hotmartsession, course_name, token, BeautifulSoup
+from utils import clear_folder_name, concat_path, create_folder, random_browser, logger, shorten_folder_name
+from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, save_html, save_link, url_conveter_pandavideo, pandavideoheaders
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -13,7 +14,8 @@ def extract_lessons_details(module_folder, lessons):
   for i, lesson in enumerate(lessons, start=1):
     hashes = lesson['hash'] if isinstance(lesson['hash'], list) else [lesson['hash']]
     for hash in hashes:
-      content_lesson = hotmartsession.get(f'https://api-club.cb.hotmart.com/rest/v3/page/{hash}?pageHash={hash}').json()
+      url = f'https://api-club.cb.hotmart.com/rest/v3/page/{hash}?pageHash={hash}'
+      content_lesson = connect(url, hotmartsession).json()
       lesson_title = f'''{i:03d} - {clear_folder_name(content_lesson['name'])}'''
       lesson_folder = create_folder(shorten_folder_name(concat_path(module_folder, lesson_title)))
       lesson_name = clear_folder_name(content_lesson['name'])
@@ -25,8 +27,8 @@ def extract_lessons_details(module_folder, lessons):
         'complementary_readings': content_lesson.get('complementaryReadings', []),
       }
       if content_lesson.get('type') == 'WEBINAR':
-        lesson_detail[clear_folder_name(lesson_detail[lesson_name])]['webinar'] = f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[content_lesson['name']]['content']}/private'''
-        lesson_detail[clear_folder_name(lesson_detail[lesson_name])]['content'] = ''
+        lesson_detail[lesson_name]['webinar'] = f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[lesson_name]['content']}/private'''
+        lesson_detail[lesson_name]['content'] = ''
 
   return lesson_detail
 
@@ -39,7 +41,7 @@ def extract_modules_details(index, module_title, main_course_folder):
 def process_complementary_readings(complementary_folder, complementarys, session):
   for i, complementary in enumerate(complementarys, start=1):
     article_url = complementary.get('articleUrl')
-    if article_url and 'youtube' in article_url:
+    if article_url and ('youtube' in article_url or 'youtu.be' in article_url):
       complementary_title = clear_folder_name(complementary.get('articleName'))
       complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
       download_complementary(complementary_folder, article_url)
@@ -48,6 +50,7 @@ def process_complementary_readings(complementary_folder, complementarys, session
 
 
 def process_webinar(webinar_folder, index, webinar, session):
+  response = connect(webinar, session)
   response = session.get(webinar).json()
   webinar_link, webinar_title = response['url'], response['name']
   webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}.mp4')
@@ -77,6 +80,11 @@ def find_content(lessons, session):
         video_url = iframe['src']
         output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
         download_complementary(output_path, video_url, session)
+      if iframe and is_pandavideo_iframe(iframe):
+        video_url = url_conveter_pandavideo(iframe['src'])
+        output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
+        session.headers.update(pandavideoheaders(video_url))
+        download_complementary(output_path, video_url, session)
       content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
       save_html(content_folder, lesson_data['content'])
 
@@ -101,9 +109,9 @@ def process_multiple_media(lesson_name, lesson_info):
   updated_lesson_info = {}
   for i, media in enumerate(lesson_info['media'], start=1):
     if lesson_info['media']:
-      lesson_video = hotmartsession.get(media['mediaSrcUrl'])
+      lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
       lesson_video = find_video(lesson_video)
-      part_lesson_name = f"{lesson_name} - Parte {i}"
+      part_lesson_name = f'{lesson_name} - Parte {i}'
       updated_lesson_info[part_lesson_name] = lesson_info.copy()
       updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
   
@@ -112,7 +120,7 @@ def process_multiple_media(lesson_name, lesson_info):
 
 def process_media(lessons, course_name):
   updated_lessons = {}
-  hotmartsession.headers['user-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  hotmartsession.headers['user-agent'] = random_browser()
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
 
   for lesson_name, lesson_info in lessons.items():
@@ -123,7 +131,7 @@ def process_media(lessons, course_name):
     updated_lessons[lesson_name] = lesson_info
     
     if lesson_info['media']:
-      lesson_video = hotmartsession.get(lesson_info['media'][0]['mediaSrcUrl'])
+      lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
       lesson_video = find_video(lesson_video)
       updated_lessons[lesson_name]['media'] = [lesson_video]
 
@@ -165,7 +173,9 @@ def list_modules(course_name, modules):
 def redirect_club_hotmart(course_name, access_token):
   hotmartsession.headers['authorization'] = f'Bearer {access_token}'
   hotmartsession.headers['club'] = course_name
-  response = hotmartsession.get('https://api-club.cb.hotmart.com/rest/v3/navigation').json()
+  response = hotmartsession.get('https://api-club.cb.hotmart.com/rest/v3/navigation')
+  if response.status_code != 200: return print('Bye bye...')
+  response = response.json()
   modules = response['modules']
   filtered_modules = [module for module in modules if not module['locked']]
   modules_locked_names = [module['name'] for module in modules if module['locked']]
@@ -176,5 +186,4 @@ def redirect_club_hotmart(course_name, access_token):
 
 
 if __name__ == '__main__':
-  course_name, course_link = selected_course
   redirect_club_hotmart(course_name, token)
