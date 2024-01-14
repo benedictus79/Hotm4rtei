@@ -43,7 +43,7 @@ def download_with_retries(ydl_opts, media, max_attempts=2):
         random_sleep()
         return '403'
     except Exception as e:
-      msg = (f'Erro ao baixar, tentando novamente {media}: {e}' if 'No such file or directory' in str(e) else f'Verifique o arquivo manualmente: {ydl_opts['outtmpl']}') if attempt == max_attempts - 1 else None
+      msg = (f'Erro ao baixar, tentando novamente {media}: {e}' if 'No such file or directory' in str(e) else f'''Verifique o arquivo manualmente: {ydl_opts['outtmpl']}''') if attempt == max_attempts - 1 else None
       if msg: logger(msg, error=True)
 
 
