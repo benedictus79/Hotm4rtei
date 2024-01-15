@@ -85,14 +85,14 @@ def download_attachments(material_folder, attachments, session):
 
 
 def save_html(content_folder, html):
-  file_path = shorten_folder_name(os.path.join(content_folder, clear_folder_name('conteudo.html')))
+  file_path = shorten_folder_name(concat_path(content_folder, clear_folder_name('conteudo.html')))
   if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
       file.write(str(html))
 
 
 def save_link(complementary_folder, index, text_link):
-  file_path = shorten_folder_name(os.path.join(complementary_folder, clear_folder_name(f'{index:03d} - complemento.txt')))
+  file_path = shorten_folder_name(concat_path(complementary_folder, f'{index:03d} - complemento.txt'))
   if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
       file.write(str(text_link))
