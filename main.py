@@ -43,8 +43,8 @@ def process_complementary_readings(complementary_folder, complementarys, session
     article_url = complementary.get('articleUrl')
     if article_url and ('youtube' in article_url or 'youtu.be' in article_url):
       complementary_title = clear_folder_name(complementary.get('articleName'))
-      complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
-      download_complementary(complementary_folder, article_url)
+      new_complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
+      download_complementary(new_complementary_folder, article_url)
     elif article_url:
       save_link(complementary_folder, i, article_url)
 
