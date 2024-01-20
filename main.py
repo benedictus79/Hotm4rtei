@@ -4,7 +4,7 @@ from threading import RLock
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 from connection import connect
-from login import hotmartsession, course_name, token, BeautifulSoup
+from login import hotmartsession, course_name, course_link, token, BeautifulSoup
 from utils import clear_folder_name, concat_path, create_folder, random_browser, logger, shorten_folder_name
 from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, save_html, save_link, url_conveter_pandavideo, pandavideoheaders
 
@@ -79,11 +79,12 @@ def find_content(lessons, session):
       if iframe and is_vimeo_iframe(iframe):
         video_url = iframe['src']
         output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
+        session.headers['Referer'] = course_link
         download_complementary(output_path, video_url, session)
       if iframe and is_pandavideo_iframe(iframe):
         video_url = url_conveter_pandavideo(iframe['src'])
         output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
-        session.headers.update(pandavideoheaders(video_url))
+        session.headers.update(pandavideoheaders(iframe['src']))
         download_complementary(output_path, video_url, session)
       content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
       save_html(content_folder, lesson_data['content'])

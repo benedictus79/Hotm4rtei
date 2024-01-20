@@ -18,7 +18,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.8'))
+  print(benedictus.format(name='hotm4rtei', version='Alpha 0.8.1'))
 
 
 def clear_screen():
@@ -42,7 +42,7 @@ def clear_folder_name(name):
   return sanitized_name
 
 
-def shorten_folder_name(full_path, max_length=225):
+def shorten_folder_name(full_path, max_length=210):
   if len(full_path) > max_length:
     num_chars_to_remove = len(full_path) - max_length
     directory, file_name = os.path.split(full_path)
@@ -78,7 +78,7 @@ def logger(message, error=None, warning=None):
 
 
 def random_sleep():
-  sleep(random.randint(30, 60))
+  sleep(random.randint(45, 70))
 
 
 def random_browser():

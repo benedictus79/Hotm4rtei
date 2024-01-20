@@ -14,12 +14,11 @@ def ytdlp_options(output_folder, session=None):
     'logger': SilentLogger(),
     'concurrent_fragment_downloads': 9,
     'fragment_retries': 50,
-    'fragment_index': None,
-    'retry_sleep_functions': {'fragment': 10},
-    'buffersize': 1024,
+    'retry_sleep_functions': {'fragment': 20},
+    'buffersize': 10485760,
     'retries': 20,
     'continuedl': True,
-    'extractor_retries': 10,
+    'extractor_retries': 20,
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
     'http_chunk_size': 10485760,
@@ -30,11 +29,10 @@ def ytdlp_options(output_folder, session=None):
   return options
 
 
-def download_with_retries(ydl_opts, media, max_attempts=2):
+def download_with_retries(ydl_opts, media, max_attempts=3):
   for attempt in range(max_attempts):
     try:
-      if attempt == 1:
-        random_sleep()
+      if attempt == 1:random_sleep()
       with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([media])
       return
@@ -43,8 +41,12 @@ def download_with_retries(ydl_opts, media, max_attempts=2):
         random_sleep()
         return '403'
     except Exception as e:
-      msg = (f'Erro ao baixar, tentando novamente {media}: {e}' if 'No such file or directory' in str(e) else f'''Verifique o arquivo manualmente: {ydl_opts['outtmpl']}''') if attempt == max_attempts - 1 else None
-      if msg: logger(msg, error=True)
+      msg = f'Falha ao baixar, tentando novamente pela {attempt + 1}° tentativa - {media}: {e}'
+      logger(msg, warning=True)
+      if attempt == max_attempts - 1:
+        msg = f'Possivelmente não consegui baixar, Verifique o arquivo manualmente: {ydl_opts["outtmpl"]} - ({e})'
+        logger(msg, warning=True)
+    
 
 
 def download_video(lessons, session):
@@ -120,11 +122,12 @@ pandavideoheaders = lambda rerefer, optional_origin=None: {
 
 
 def url_conveter_pandavideo(url):
-  pattern = r'v=([a-zA-Z0-9-]+)'
+  pattern = r'https://player-vz-([a-zA-Z0-9-]+).tv.pandavideo.com.br/embed/\?v=([a-zA-Z0-9-]+)'
   match = re.search(pattern, url)
   if match:
-    extracted_part = match.group(1)
-    video_url = f'https://b-vz-ebb1a508-9aa.tv.pandavideo.com.br/{extracted_part}/playlist.m3u8'
+    subdomain = match.group(1)
+    extracted_part = match.group(2)
+    video_url = f'https://b-vz-{subdomain}.tv.pandavideo.com.br/{extracted_part}/playlist.m3u8'
     return video_url
 
 

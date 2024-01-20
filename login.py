@@ -45,7 +45,7 @@ def check_token(access_token):
 
   for resource in response:
     resource_info = resource.get('resource', {})
-    if resource_info.get('status') == 'ACTIVE':
+    if resource_info.get('status') == 'ACTIVE' or resource_info.get('status') == 'OVERDUE':
       courses[resource_info['subdomain']] = f'''https://{resource_info['subdomain']}.club.hotmart.com'''
 
   return courses
