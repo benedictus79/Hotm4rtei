@@ -1,8 +1,14 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 import yt_dlp
 import re
 from connection import check_forbidden, connect
 from login import requests
 from utils import concat_path, logger, os, random_sleep, shorten_folder_name, clear_folder_name, SilentLogger
+
+
+success_hdntl_lock = Lock()
+success_hdntl = None
 
 
 def ytdlp_options(output_folder, session=None):
@@ -12,13 +18,15 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
-    'concurrent_fragment_downloads': 9,
+    'concurrent_fragment_downloads': 10,
     'fragment_retries': 50,
     'retry_sleep_functions': {'fragment': 20},
     'buffersize': 10485760,
     'retries': 20,
     'continuedl': True,
+    'hls_prefer_native': False,
     'extractor_retries': 20,
+    #'external_downloader': {'m3u8': 'ffmpeg'},
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
     'http_chunk_size': 10485760,
@@ -30,34 +38,43 @@ def ytdlp_options(output_folder, session=None):
 
 
 def download_with_retries(ydl_opts, media, max_attempts=3):
-  for attempt in range(max_attempts):
-    try:
-      if attempt == 1:random_sleep()
-      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+  while True:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+      try:
         ydl.download([media])
-      return
-    except yt_dlp.utils.DownloadError as e:
-      if '403' in str(e):
-        random_sleep()
-        return '403'
-    except Exception as e:
-      msg = f'Falha ao baixar, tentando novamente pela {attempt + 1}° tentativa - {media}: {e}'
-      logger(msg, warning=True)
-      if attempt == max_attempts - 1:
-        msg = f'Possivelmente não consegui baixar, Verifique o arquivo manualmente: {ydl_opts["outtmpl"]} - ({e})'
+        return
+      except yt_dlp.utils.DownloadError as e:
+        msg = f'Falha ao baixar, tente novamente mais parte {ydl_opts['outtmpl']}'
         logger(msg, warning=True)
-    
+        return
+      except PermissionError as e:
+        random_sleep()
 
 
 def download_video(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    output = shorten_folder_name(concat_path(lesson_data['path'], f'{clear_folder_name(lesson_name)}.mp4'))
-    ydl_opts = ytdlp_options(output, session)
-    for lesson_media in lesson_data['media']:
-      download = download_with_retries(ydl_opts, lesson_media)
-      if download == '403':
-        ydl_opts = check_forbidden(ydl_opts, lesson_media, session)
+    def download_task(lesson_name, lesson_media):
+        output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name)}.mp4'))
+        ydl_opts = ytdlp_options(output, session)
         download_with_retries(ydl_opts, lesson_media)
+
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        for lesson_name, lesson_data in lessons.items():
+            # Criar uma lista de tarefas para serem executadas em paralelo
+            tasks = [(lesson_name, media) for media in lesson_data['media']]
+            # Agendar as tarefas para execução
+            for task in tasks:
+                executor.submit(download_task, *task)
+""" with success_hdntl_lock:
+  if download_status == 'sucesso':
+    print('Sucesso no download')
+    success_hdntl = extract_hdntl(lesson_media)
+    print('HDNTL de sucesso:', success_hdntl)
+  elif download_status == '403' and success_hdntl is not None:
+      new_media = replace_hdntl(lesson_media, success_hdntl)
+      retry_status = download_with_retries(ydl_opts, new_media)
+      if retry_status == 'sucesso':
+          print('Sucesso após tentar novamente') """
+    
 
 
 def download_file(path, attachments):

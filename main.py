@@ -32,7 +32,6 @@ def extract_lessons_details(module_folder, lessons):
 
   return lesson_detail
 
-
 def extract_modules_details(index, module_title, main_course_folder):
   module_folder =  create_folder(shorten_folder_name(concat_path(main_course_folder, f'{index:03d} - {clear_folder_name(module_title)}')))
   return module_folder
@@ -57,18 +56,17 @@ def process_webinar(webinar_folder, index, webinar, session):
   download_complementary(webinar_folder, webinar_link)
 
 
-def find_webinar(lessons, session):
-  for i, (lesson_name, lesson_data) in enumerate(lessons.items(), start=1):
-    if lesson_data.get('webinar'):
-      webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
-      process_webinar(webinar_folder, i, lesson_data['webinar'], session)
-
-
 def find_complementary_readings(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
+  for i, (lesson_name, lesson_data) in enumerate(lessons.items(), start=1):
     if lesson_data.get('complementary_readings'):
       complementary_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'complemento')))
       process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
+    if lesson_data.get('webinar'):
+      webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
+      process_webinar(webinar_folder, i, lesson_data['webinar'], session)
+    if lesson_data.get('attachments'):
+      material_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'material')))
+      download_attachments(material_folder, lesson_data['attachments'], session)
 
 
 def find_content(lessons, session):
@@ -88,13 +86,6 @@ def find_content(lessons, session):
         download_complementary(output_path, video_url, session)
       content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
       save_html(content_folder, lesson_data['content'])
-
-
-def find_attachments(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    if lesson_data['attachments']:
-      material_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'material')))
-      download_attachments(material_folder, lesson_data['attachments'], session)
 
 
 def find_video(lesson_video):
@@ -142,9 +133,7 @@ def process_media(lessons, course_name):
 def process_lessons_details(lessons, course_name):
   processed_lessons = process_media(lessons, course_name)
   download_video(processed_lessons, hotmartsession)
-  find_webinar(processed_lessons, hotmartsession)
   find_complementary_readings(processed_lessons, hotmartsession)
-  find_attachments(processed_lessons, hotmartsession)
   find_content(processed_lessons, hotmartsession)
 
   return processed_lessons
@@ -158,17 +147,20 @@ def process_module(module, main_course_folder, course_name):
 
 
 def list_modules(course_name, modules):
-  main_course_folder = create_folder(clear_folder_name(course_name))
-  tqdm.set_lock(RLock())
+    main_course_folder = create_folder(clear_folder_name(course_name))
+    tqdm.set_lock(RLock())
 
-  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
-  partial_functions = [partial(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
+    modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
 
-  with ThreadPoolExecutor(max_workers=2, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
-    main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
-    for _ in executor.map(lambda f: f(), partial_functions):
-      main_progress_bar.update(1)
-    main_progress_bar.close()
+    # Criar uma barra de progresso principal
+    with tqdm(total=len(modules), desc=course_name, leave=True) as main_progress_bar:
+        for module_data in modules_data:
+            # Processar cada módulo individualmente
+            process_module(module_data, main_course_folder, course_name)
+
+            # Atualizar a barra de progresso após cada módulo ser processado
+            main_progress_bar.update(1)
+
 
 
 def redirect_club_hotmart(course_name, access_token):

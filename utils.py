@@ -78,7 +78,7 @@ def logger(message, error=None, warning=None):
 
 
 def random_sleep():
-  sleep(random.randint(45, 70))
+  sleep(random.randint(20, 60))
 
 
 def random_browser():
@@ -107,7 +107,7 @@ class SilentLogger(object):
     pass
 
   def warning(self, msg):
-    logger(msg, warnig=True)
+    logger(msg, warning=True)
 
   def error(self, msg):
     if 'HTTP Error 403' in str(msg):return
