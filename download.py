@@ -1,8 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 import re
-from connection import check_forbidden, connect
-from login import requests
-from utils import concat_path, logger, os, random_sleep, shorten_folder_name, clear_folder_name, SilentLogger
+from connection import connect
+from login import requests, BeautifulSoup, course_link
+from utils import concat_path, create_folder, logger, os, random_sleep, shorten_folder_name, clear_folder_name, SilentLogger
 
 
 def ytdlp_options(output_folder, session=None):
@@ -12,13 +13,16 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
-    'concurrent_fragment_downloads': 9,
+    'concurrent_fragment_downloads': 10,
     'fragment_retries': 50,
+    'file_access_retries': 10,
     'retry_sleep_functions': {'fragment': 20},
     'buffersize': 10485760,
     'retries': 20,
     'continuedl': True,
+    'hls_prefer_native': False,
     'extractor_retries': 20,
+    'external_downloader': {'m3u8': 'ffmpeg'},
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
     'http_chunk_size': 10485760,
@@ -29,35 +33,81 @@ def ytdlp_options(output_folder, session=None):
   return options
 
 
-def download_with_retries(ydl_opts, media, max_attempts=3):
-  for attempt in range(max_attempts):
-    try:
-      if attempt == 1:random_sleep()
-      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+def download_with_retries(ydl_opts, media):
+  while True:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+      try:
         ydl.download([media])
-      return
-    except yt_dlp.utils.DownloadError as e:
-      if '403' in str(e):
-        random_sleep()
-        return '403'
-    except Exception as e:
-      msg = f'Falha ao baixar, tentando novamente pela {attempt + 1}° tentativa - {media}: {e}'
-      logger(msg, warning=True)
-      if attempt == max_attempts - 1:
-        msg = f'Possivelmente não consegui baixar, Verifique o arquivo manualmente: {ydl_opts["outtmpl"]} - ({e})'
+        return
+      except yt_dlp.utils.DownloadError as e:
+        msg = f'Verifique manualmente ou tenta novamente mais tarde: {ydl_opts['outtmpl']}'
         logger(msg, warning=True)
-    
+        return
+      except PermissionError as e:
+        random_sleep()
+
+
+def process_webinar(webinar_folder, index, webinar, session):
+  response = connect(webinar, session)
+  response = session.get(webinar).json()
+  webinar_link, webinar_title = response['url'], response['name']
+  webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}.mp4')
+  download_complementary(webinar_folder, webinar_link)
+
+
+def process_complementary_readings(complementary_folder, complementarys, session):
+  for i, complementary in enumerate(complementarys, start=1):
+    article_url = complementary.get('articleUrl')
+    if article_url and ('youtube' in article_url or 'youtu.be' in article_url):
+      complementary_title = clear_folder_name(complementary.get('articleName'))
+      new_complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
+      download_complementary(new_complementary_folder, article_url)
+    elif article_url:
+      save_link(complementary_folder, i, article_url)
+
+
+def download_task(lessons, lesson_name, lesson_media, session):
+    output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name)}.mp4'))
+    ydl_opts = ytdlp_options(output, session)
+    download_with_retries(ydl_opts, lesson_media)
+
+
+def download_iframe_video_task(output_path, video_url, session, headers=None):
+    if headers:
+        session.headers.update(headers)
+    download_complementary(output_path, video_url, session)
 
 
 def download_video(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    output = shorten_folder_name(concat_path(lesson_data['path'], f'{clear_folder_name(lesson_name)}.mp4'))
-    ydl_opts = ytdlp_options(output, session)
-    for lesson_media in lesson_data['media']:
-      download = download_with_retries(ydl_opts, lesson_media)
-      if download == '403':
-        ydl_opts = check_forbidden(ydl_opts, lesson_media, session)
-        download_with_retries(ydl_opts, lesson_media)
+  with ThreadPoolExecutor(max_workers=5) as executor:
+    for lesson_name, lesson_data in lessons.items():
+      tasks = [(lessons, lesson_name, media, session) for media in lesson_data['media']]
+      for task in tasks:
+        executor.submit(download_task, *task)
+      if lesson_data.get('complementary_readings'):
+        complementary_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'complemento')))
+        process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
+      if lesson_data.get('webinar'):
+        webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
+        process_webinar(webinar_folder, lesson_name, lesson_data['webinar'], session)
+      if lesson_data.get('attachments'):
+        material_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'material')))
+        download_attachments(material_folder, lesson_data['attachments'], session)
+      if lesson_data.get('content'):
+        soup = BeautifulSoup(lesson_data['content'], 'html.parser')
+        iframe = soup.find('iframe')
+        if iframe and is_vimeo_iframe(iframe):
+          video_url = iframe['src']
+          output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
+          session.headers['Referer'] = course_link
+          executor.submit(download_iframe_video_task, output_path, video_url, session)
+        if iframe and is_pandavideo_iframe(iframe):
+          video_url = url_conveter_pandavideo(iframe['src'])
+          output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
+          session.headers.update(pandavideoheaders(iframe['src']))
+          executor.submit(download_iframe_video_task, output_path, video_url, session, pandavideoheaders(iframe['src']))
+        content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
+        save_html(content_folder, lesson_data['content'])
 
 
 def download_file(path, attachments):
@@ -87,7 +137,7 @@ def download_attachments(material_folder, attachments, session):
 
 
 def save_html(content_folder, html):
-  file_path = shorten_folder_name(concat_path(content_folder, clear_folder_name('conteudo.html')))
+  file_path = shorten_folder_name(concat_path(content_folder, 'conteudo.html'))
   if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
       file.write(str(html))
@@ -104,10 +154,7 @@ def download_complementary(complementary_folder, complementary, session=None):
   ydl_opts = ytdlp_options(complementary_folder)
   if session:
     ydl_opts = ytdlp_options(complementary_folder, session)
-  download = download_with_retries(ydl_opts, complementary)
-  if download == '403':
-    ydl_opts = check_forbidden(ydl_opts, complementary, session)
-    download_with_retries(ydl_opts, complementary)
+  download_with_retries(ydl_opts, complementary)
 
 
 def is_vimeo_iframe(iframe):

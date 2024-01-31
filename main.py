@@ -1,12 +1,10 @@
 import json
 from tqdm import tqdm
 from threading import RLock
-from functools import partial
-from concurrent.futures import ThreadPoolExecutor
 from connection import connect
-from login import hotmartsession, course_name, course_link, token, BeautifulSoup
+from login import hotmartsession, course_name, token, BeautifulSoup
 from utils import clear_folder_name, concat_path, create_folder, random_browser, logger, shorten_folder_name
-from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, save_html, save_link, url_conveter_pandavideo, pandavideoheaders
+from download import download_video
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -36,65 +34,6 @@ def extract_lessons_details(module_folder, lessons):
 def extract_modules_details(index, module_title, main_course_folder):
   module_folder =  create_folder(shorten_folder_name(concat_path(main_course_folder, f'{index:03d} - {clear_folder_name(module_title)}')))
   return module_folder
-
-
-def process_complementary_readings(complementary_folder, complementarys, session):
-  for i, complementary in enumerate(complementarys, start=1):
-    article_url = complementary.get('articleUrl')
-    if article_url and ('youtube' in article_url or 'youtu.be' in article_url):
-      complementary_title = clear_folder_name(complementary.get('articleName'))
-      new_complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{i:03d} - {complementary_title}.mp4'))
-      download_complementary(new_complementary_folder, article_url)
-    elif article_url:
-      save_link(complementary_folder, i, article_url)
-
-
-def process_webinar(webinar_folder, index, webinar, session):
-  response = connect(webinar, session)
-  response = session.get(webinar).json()
-  webinar_link, webinar_title = response['url'], response['name']
-  webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}.mp4')
-  download_complementary(webinar_folder, webinar_link)
-
-
-def find_webinar(lessons, session):
-  for i, (lesson_name, lesson_data) in enumerate(lessons.items(), start=1):
-    if lesson_data.get('webinar'):
-      webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
-      process_webinar(webinar_folder, i, lesson_data['webinar'], session)
-
-
-def find_complementary_readings(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    if lesson_data.get('complementary_readings'):
-      complementary_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'complemento')))
-      process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
-
-
-def find_content(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    if lesson_data['content']:
-      soup = BeautifulSoup(lesson_data['content'], 'html.parser')
-      iframe = soup.find('iframe')
-      if iframe and is_vimeo_iframe(iframe):
-        video_url = iframe['src']
-        output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
-        session.headers['Referer'] = course_link
-        download_complementary(output_path, video_url, session)
-      if iframe and is_pandavideo_iframe(iframe):
-        video_url = url_conveter_pandavideo(iframe['src'])
-        output_path = shorten_folder_name(concat_path(lesson_data['path'], f'{lesson_name}.mp4'))
-        session.headers.update(pandavideoheaders(iframe['src']))
-        download_complementary(output_path, video_url, session)
-      content_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'html')))
-      save_html(content_folder, lesson_data['content'])
-
-
-def find_attachments(lessons, session):
-  for lesson_name, lesson_data in lessons.items():
-    if lesson_data['attachments']:
-      material_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'material')))
-      download_attachments(material_folder, lesson_data['attachments'], session)
 
 
 def find_video(lesson_video):
@@ -142,10 +81,6 @@ def process_media(lessons, course_name):
 def process_lessons_details(lessons, course_name):
   processed_lessons = process_media(lessons, course_name)
   download_video(processed_lessons, hotmartsession)
-  find_webinar(processed_lessons, hotmartsession)
-  find_complementary_readings(processed_lessons, hotmartsession)
-  find_attachments(processed_lessons, hotmartsession)
-  find_content(processed_lessons, hotmartsession)
 
   return processed_lessons
 
@@ -158,17 +93,14 @@ def process_module(module, main_course_folder, course_name):
 
 
 def list_modules(course_name, modules):
-  main_course_folder = create_folder(clear_folder_name(course_name))
-  tqdm.set_lock(RLock())
+    main_course_folder = create_folder(clear_folder_name(course_name))
+    tqdm.set_lock(RLock())
+    modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
 
-  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
-  partial_functions = [partial(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
-
-  with ThreadPoolExecutor(max_workers=2, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
-    main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
-    for _ in executor.map(lambda f: f(), partial_functions):
-      main_progress_bar.update(1)
-    main_progress_bar.close()
+    with tqdm(total=len(modules), desc=course_name, leave=True) as main_progress_bar:
+        for module_data in modules_data:
+            process_module(module_data, main_course_folder, course_name)
+            main_progress_bar.update(1)
 
 
 def redirect_club_hotmart(course_name, access_token):
