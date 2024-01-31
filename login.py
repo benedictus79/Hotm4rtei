@@ -8,10 +8,8 @@ hotmartsession = requests.Session()
 
 def credentials():
   benedictus_ascii_art()
-  #username = input('email: ')
-  #password = input('senha: ')
-  username = 'luanismos91@gmail.com'
-  password = 'Minhasenha123*'
+  username = input('email: ')
+  password = input('senha: ')
   clear_screen()
   return username, password
 

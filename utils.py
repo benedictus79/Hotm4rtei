@@ -5,20 +5,19 @@ from datetime import datetime
 from time import sleep
 
 
-
 def benedictus_ascii_art():
   benedictus = """
-     ___ ___ _  _ ___ ___ ___ ___ _____ _   _ ___ 
-    | _ ) __| \| | __|   \_ _/ __|_   _| | | / __|
-    | _ \ _|| .` | _|| |) | | (__  | | | |_| \__ \\
-    |___/___|_|\_|___|___/___\___| |_|  \___/|___/
+     _  _  ___ _____ __  __ _ _  ___ _____ ___ ___ 
+    | || |/ _ \_   _|  \/  | | || _ \_   _| __|_ _|
+    | __ | (_) || | | |\/| |_  _|   / | | | _| | | 
+    |_||_|\___/ |_| |_|  |_| |_||_|_\ |_| |___|___|
     
   Author: Benedictus ©
   Community: https://t.me/alex4ndriagroup
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Alpha 0.8.1'))
+  print(benedictus.format(name='hotm4rtei', version='Beta 1.0'))
 
 
 def clear_screen():
@@ -35,7 +34,7 @@ def create_folder(folder_name):
 
 
 def clear_folder_name(name):
-  sanitized_name = re.sub(r'[<>:"/\\|?*]', ' ', name)
+  sanitized_name = re.sub(r'[<>:."/\\|?*]', ' ', name)
   sanitized_name = re.sub(r'\s+', ' ', sanitized_name).strip()
   sanitized_name = re.sub(r'\.$', '', sanitized_name)
 
