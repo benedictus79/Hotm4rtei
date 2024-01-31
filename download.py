@@ -40,9 +40,10 @@ def download_with_retries(ydl_opts, media):
         ydl.download([media])
         return
       except yt_dlp.utils.DownloadError as e:
-        msg = f'Verifique manualmente ou tenta novamente mais tarde: {ydl_opts['outtmpl']}'
-        logger(msg, warning=True)
-        return
+        if '403' in str(e):
+          msg = f'Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']}'
+          logger(msg, warning=True)
+          return
       except PermissionError as e:
         random_sleep()
 
@@ -111,7 +112,7 @@ def download_video(lessons, session):
 
 
 def download_file(path, attachments):
-  with open(path, 'wb') as file:
+  with open(shorten_folder_name(path), 'wb') as file:
     for chunk in attachments.iter_content(chunk_size=8192):
       file.write(chunk)
 
@@ -129,8 +130,8 @@ def download_attachments(material_folder, attachments, session):
     elif response.get('lambdaUrl'):
       session.headers['authority'] = 'drm-protection.cb.hotmart.com'
       session.headers['token'] = response.get('token')
-      attachments_url = session.get('https://drm-protection.cb.hotmart.com', stream=True).text
-      attachments = session.get(attachments_url, stream=True)
+      attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
+      attachments = connect(attachments_url, session)
       path = concat_path(material_folder, f'{i:03d} - {filename}')
       download_file(path, attachments)
       logger(f'Verifique o arquivo manualmente, pode ter dados importantes: {path}', warning=True)
