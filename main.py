@@ -14,6 +14,10 @@ def extract_lessons_details(module_folder, lessons):
     for hash in hashes:
       url = f'https://api-club.cb.hotmart.com/rest/v3/page/{hash}?pageHash={hash}'
       content_lesson = connect(url, hotmartsession).json()
+      if content_lesson.get('error') == 'PAGE_LOCKED_CONTENT_DRIPPING':
+        msg = f'Lição bloqueada do módulo: {module_folder}'
+        logger(msg, warning=True)
+        continue
       lesson_title = f'''{i:03d} - {clear_folder_name(content_lesson['name'])}'''
       lesson_folder = create_folder(shorten_folder_name(concat_path(module_folder, lesson_title)))
       lesson_name = clear_folder_name(content_lesson['name'])
