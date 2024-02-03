@@ -41,7 +41,7 @@ def download_with_retries(ydl_opts, media):
         return
       except yt_dlp.utils.DownloadError as e:
         if '403' in str(e):
-          msg = f'Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']}'
+          msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']}'''
           logger(msg, warning=True)
           return
       except PermissionError as e:
