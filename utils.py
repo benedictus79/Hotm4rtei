@@ -34,11 +34,14 @@ def create_folder(folder_name):
 
 
 def clear_folder_name(name):
-  sanitized_name = re.sub(r'[<>:."/\\|?*]', ' ', name)
-  sanitized_name = re.sub(r'\s+', ' ', sanitized_name).strip()
-  sanitized_name = re.sub(r'\.$', '', sanitized_name)
+  base, ext = os.path.splitext(name)
+  sanitized_base = re.sub(r'[<>:."/\\|?*]', ' ', base)
+  sanitized_base = re.sub(r'\s+', ' ', sanitized_base).strip()
+  sanitized_base = re.sub(r'\.$', '', sanitized_base)
+  if ext:
+    return sanitized_base + ext
 
-  return sanitized_name
+  return sanitized_base
 
 
 def shorten_folder_name(full_path, max_length=210):

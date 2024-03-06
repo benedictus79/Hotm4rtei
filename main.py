@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
 from tqdm import tqdm
 from threading import RLock
@@ -55,6 +56,9 @@ def process_multiple_media(lesson_name, lesson_info):
     if lesson_info['media']:
       lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
       lesson_video = find_video(lesson_video)
+      print(lesson_name)
+      updated_lesson_info[lesson_name]['referer_media'] = lesson_info['media'][0]['mediaSrcUrl']
+      print(updated_lesson_info[lesson_name]['referer_media'])
       part_lesson_name = f'{lesson_name} - Parte {i}'
       updated_lesson_info[part_lesson_name] = lesson_info.copy()
       updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
@@ -77,6 +81,7 @@ def process_media(lessons, course_name):
     if lesson_info['media']:
       lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
       lesson_video = find_video(lesson_video)
+      updated_lessons[lesson_name]['referer_media'] = lesson_info['media'][0]['mediaSrcUrl']
       updated_lessons[lesson_name]['media'] = [lesson_video]
 
   return updated_lessons
@@ -96,15 +101,19 @@ def process_module(module, main_course_folder, course_name):
     process_lessons_details(lessons, course_name)
 
 
-def list_modules(course_name, modules):
-    main_course_folder = create_folder(clear_folder_name(course_name))
-    tqdm.set_lock(RLock())
-    modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
+def process_and_update(module_data, main_course_folder, course_name):
+  process_module(module_data, main_course_folder, course_name)
 
-    with tqdm(total=len(modules), desc=course_name, leave=True) as main_progress_bar:
-        for module_data in modules_data:
-            process_module(module_data, main_course_folder, course_name)
-            main_progress_bar.update(1)
+
+def list_modules(course_name, modules):
+  main_course_folder = create_folder(clear_folder_name(course_name))
+  tqdm.set_lock(RLock())
+  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
+
+  with tqdm(total=len(modules), desc=course_name, leave=True) as main_progress_bar:
+    for module_data in modules_data:
+      process_module(module_data, main_course_folder, course_name)
+      main_progress_bar.update(1)
 
 
 def redirect_club_hotmart(course_name, access_token):
