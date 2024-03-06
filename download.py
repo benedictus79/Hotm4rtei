@@ -41,7 +41,7 @@ def download_with_retries(ydl_opts, media):
         return
       except yt_dlp.utils.DownloadError as e:
         if '403' in str(e):
-          msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']}'''
+          msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media}'''
           logger(msg, warning=True)
           return
       except PermissionError as e:
@@ -67,9 +67,10 @@ def process_complementary_readings(complementary_folder, complementarys, session
       save_link(complementary_folder, i, article_url)
 
 
-def download_task(lessons, lesson_name, lesson_media, session):
+def download_task(lessons, lesson_name, lesson_media, session, referer):
     output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name)}.mp4'))
     ydl_opts = ytdlp_options(output, session)
+    ydl_opts['http_headers']['referer'] = referer
     download_with_retries(ydl_opts, lesson_media)
 
 
@@ -80,9 +81,9 @@ def download_iframe_video_task(output_path, video_url, session, headers=None):
 
 
 def download_video(lessons, session):
-  with ThreadPoolExecutor(max_workers=5) as executor:
-    for lesson_name, lesson_data in lessons.items():
-      tasks = [(lessons, lesson_name, media, session) for media in lesson_data['media']]
+  with ThreadPoolExecutor(max_workers=7) as executor:
+    for i, (lesson_name, lesson_data) in enumerate(lessons.items()):
+      tasks = [(lessons, lesson_name, media, session, lesson_data['referer_media']) for media in lesson_data['media']]
       for task in tasks:
         executor.submit(download_task, *task)
       if lesson_data.get('complementary_readings'):
@@ -90,7 +91,7 @@ def download_video(lessons, session):
         process_complementary_readings(complementary_folder, lesson_data['complementary_readings'], session)
       if lesson_data.get('webinar'):
         webinar_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'webinar')))
-        process_webinar(webinar_folder, lesson_name, lesson_data['webinar'], session)
+        process_webinar(webinar_folder, i, lesson_data['webinar'], session)
       if lesson_data.get('attachments'):
         material_folder = create_folder(shorten_folder_name(concat_path(lesson_data['path'], 'material')))
         download_attachments(material_folder, lesson_data['attachments'], session)
@@ -125,14 +126,14 @@ def download_attachments(material_folder, attachments, session):
     if response.get('directDownloadUrl'):
       attachments_url = response['directDownloadUrl']
       attachments = requests.get(attachments_url, stream=True)
-      path = concat_path(material_folder, f'{i:03d} - {filename}')
+      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename)}')
       download_file(path, attachments)
     elif response.get('lambdaUrl'):
       session.headers['authority'] = 'drm-protection.cb.hotmart.com'
       session.headers['token'] = response.get('token')
       attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
       attachments = connect(attachments_url, session)
-      path = concat_path(material_folder, f'{i:03d} - {filename}')
+      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename)}')
       download_file(path, attachments)
       logger(f'Verifique o arquivo manualmente, pode ter dados importantes: {path}', warning=True)
 
