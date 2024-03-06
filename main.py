@@ -101,9 +101,8 @@ def process_module(module, main_course_folder, course_name):
     process_lessons_details(lessons, course_name)
 
 
-def process_and_update(module_data, main_course_folder, course_name, progress_bar):
+def process_and_update(module_data, main_course_folder, course_name):
   process_module(module_data, main_course_folder, course_name)
-  progress_bar.update(1)
 
 
 def list_modules(course_name, modules):
