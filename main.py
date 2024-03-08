@@ -52,14 +52,14 @@ def find_video(lesson_video):
 
 def process_multiple_media(lesson_name, lesson_info):
   updated_lesson_info = {}
-  for i, media in enumerate(lesson_info['media'], start=1):
-    if lesson_info['media']:
-      lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
-      lesson_video = find_video(lesson_video)
-      part_lesson_name = f'{lesson_name} - Parte {i}'
-      updated_lesson_info[part_lesson_name] = lesson_info.copy()
-      updated_lesson_info[part_lesson_name]['referer_media'] = lesson_info['media'][0]['mediaSrcUrl']
-      updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
+  media_src_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
+  for i, media in enumerate(media_src_urls, start=1):
+    lesson_video = connect(media, hotmartsession)
+    lesson_video = find_video(lesson_video)
+    part_lesson_name = f'{lesson_name} - Parte {i}'
+    updated_lesson_info[part_lesson_name] = lesson_info.copy()
+    updated_lesson_info[part_lesson_name]['referer_media'] = media
+    updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
   
   return updated_lesson_info
 
