@@ -68,7 +68,7 @@ def process_complementary_readings(complementary_folder, complementarys, session
 
 
 def download_task(lessons, lesson_name, lesson_media, session, referer):
-    output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name)}.mp4'))
+    output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name, is_file=True)}.mp4'))
     ydl_opts = ytdlp_options(output, session)
     ydl_opts['http_headers']['referer'] = referer
     download_with_retries(ydl_opts, lesson_media)
@@ -126,14 +126,14 @@ def download_attachments(material_folder, attachments, session):
     if response.get('directDownloadUrl'):
       attachments_url = response['directDownloadUrl']
       attachments = requests.get(attachments_url, stream=True)
-      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename)}')
+      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename, is_file=True)}')
       download_file(path, attachments)
     elif response.get('lambdaUrl'):
       session.headers['authority'] = 'drm-protection.cb.hotmart.com'
       session.headers['token'] = response.get('token')
       attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
       attachments = connect(attachments_url, session)
-      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename)}')
+      path = concat_path(material_folder, f'{i:03d} - {clear_folder_name(filename, is_file=True)}')
       download_file(path, attachments)
       logger(f'Verifique o arquivo manualmente, pode ter dados importantes: {path}', warning=True)
 
