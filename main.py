@@ -12,7 +12,6 @@ def extract_lessons_details(module_folder, lessons):
   lesson_detail = {}
   for i, lesson in enumerate(lessons, start=1):
     hashes = lesson['hash'] if isinstance(lesson['hash'], list) else [lesson['hash']]
-    print(lesson)
     for hash in hashes:
       url = f'https://api-club.cb.hotmart.com/rest/v3/page/{hash}?pageHash={hash}'
       content_lesson = connect(url, hotmartsession).json()
