@@ -3,7 +3,6 @@ from utils import random_browser, logger, random_sleep
 
 
 def refresh_token(url_token=url_token, username=username, password=password):
-  random_sleep()
   data = {
     'grant_type': 'password',
     'username': username,
@@ -28,7 +27,8 @@ def refresh_token(url_token=url_token, username=username, password=password):
 
 def connect(url, session):
   try:
-    return session.get(url)
+    new_session = refresh_token(url_token)
+    return new_session.get(url)
   except requests.exceptions.ConnectionError as e:
     random_sleep()
     logger(f'Possivelmente seu token expirou, tentando novamente: {e}', warning=True)

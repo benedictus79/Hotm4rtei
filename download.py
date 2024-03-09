@@ -68,16 +68,16 @@ def process_complementary_readings(complementary_folder, complementarys, session
 
 
 def download_task(lessons, lesson_name, lesson_media, session, referer):
-    output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name, is_file=True)}.mp4'))
-    ydl_opts = ytdlp_options(output, session)
-    ydl_opts['http_headers']['referer'] = referer
-    download_with_retries(ydl_opts, lesson_media)
+  output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name, is_file=True)}.mp4'))
+  ydl_opts = ytdlp_options(output, session)
+  ydl_opts['http_headers']['referer'] = referer
+  download_with_retries(ydl_opts, lesson_media)
 
 
 def download_iframe_video_task(output_path, video_url, session, headers=None):
-    if headers:
-        session.headers.update(headers)
-    download_complementary(output_path, video_url, session)
+  if headers:
+    session.headers.update(headers)
+  download_complementary(output_path, video_url, session)
 
 
 def download_video(lessons, session):
