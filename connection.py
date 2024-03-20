@@ -27,8 +27,7 @@ def refresh_token(url_token=url_token, username=username, password=password):
 
 def connect(url, session):
   try:
-    new_session = refresh_token(url_token)
-    return new_session.get(url)
+    return session.get(url)
   except requests.exceptions.ConnectionError as e:
     random_sleep()
     logger(f'Possivelmente seu token expirou, tentando novamente: {e}', warning=True)

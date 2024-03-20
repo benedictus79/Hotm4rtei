@@ -13,15 +13,15 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
-    'concurrent_fragment_downloads': 10,
+    'concurrent_fragment_downloads': 7,
     'fragment_retries': 50,
     'file_access_retries': 10,
-    'retry_sleep_functions': {'fragment': 20},
+    'retry_sleep_functions': {'fragment': 30},
     'buffersize': 10485760,
-    'retries': 20,
+    'retries': 30,
     'continuedl': True,
     'hls_prefer_native': False,
-    'extractor_retries': 20,
+    'extractor_retries': 30,
     'external_downloader': {'m3u8': 'ffmpeg'},
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
@@ -81,7 +81,7 @@ def download_iframe_video_task(output_path, video_url, session, headers=None):
 
 
 def download_video(lessons, session):
-  with ThreadPoolExecutor(max_workers=7) as executor:
+  with ThreadPoolExecutor(max_workers=5) as executor:
     for i, (lesson_name, lesson_data) in enumerate(lessons.items()):
       tasks = [(lessons, lesson_name, media, session, lesson_data['referer_media']) for media in lesson_data['media']]
       for task in tasks:
