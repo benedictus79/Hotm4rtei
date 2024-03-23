@@ -47,7 +47,8 @@ def find_video(lesson_video):
   if script_tag:
     data = json.loads(script_tag.string)
     media_assets = data.get('props', {}).get('pageProps', {}).get('applicationData', {}).get('mediaAssets', [])
-    return ', '.join([asset.get('url') for asset in media_assets if 'url' in asset])
+    urls = [asset.get('url') for asset in media_assets if 'url' in asset]
+    return urls[0]
 
 
 def process_multiple_media(lesson_name, lesson_info):
