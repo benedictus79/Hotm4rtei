@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
+import shutil
+import subprocess
 import yt_dlp
 import re
 from connection import connect
@@ -23,6 +25,7 @@ def ytdlp_options(output_folder, session=None):
     'hls_prefer_native': False,
     'extractor_retries': 30,
     'external_downloader': {'m3u8': 'ffmpeg'},
+    'allow_unplayable_formats': True,
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
     'http_chunk_size': 10485760,
@@ -30,13 +33,28 @@ def ytdlp_options(output_folder, session=None):
   if session:
     options['http_headers'] = session.headers
 
-  return options
+  return output_folder, options
 
 
-def download_with_retries(ydl_opts, media):
+def wvkeys(filename='wvkey.txt'):
+  with open(filename, 'r') as file:
+    first_line = file.readline().strip()
+    return first_line
+
+
+def download_with_retries(n, ydl_opts, media):
   while True:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
       try:
+        if 'drm' in media:
+          directory_path = os.path.dirname(n)
+          file_name = os.path.splitext(os.path.basename(n))[0]
+          file_name = re.sub(r'[^a-zA-Z0-9\s]', '', file_name)
+          cmd = f'''N_m3u8DL-RE "{media}" --key {wvkeys()} -H "origin: https://cf-embed.play.hotmart.com" -H "referer: https://cf-embed.play.hotmart.com/" --save-name "{file_name}" -mt -M mp4 -sv best -sa best'''
+          subprocess.run(cmd, encoding='utf-8')
+          source_file_path = f"{file_name}.mp4"
+          shutil.move(source_file_path, directory_path)
+          return 
         ydl.download([media])
         return
       except yt_dlp.utils.DownloadError as e:
@@ -44,6 +62,22 @@ def download_with_retries(ydl_opts, media):
           msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media}'''
           logger(msg, warning=True)
           return
+        """ elif 'This video is DRM protected' in str(e):
+          if 'postprocessors' not in ydl_opts:
+            ydl_opts['postprocessors'] = [{
+              'key': 'MP4Decrypt',
+              'when': 'post_process',
+              'MP4Decrypt_options': {
+                'decryption_key': '0a6813a8369f383363a0e8e440493be7:f32bec8f13be2be5d4ab15f6ecf9bf68',  # Substitua 'your_key' pela sua chave de descriptografia
+              },
+            }]
+          logger(f'Vídeo protegido por DRM detectado, tentando com N_m3u8DL-RE.', warning=True)
+          continue """
+        """elif 'This video is DRM protected' or '404' or 'Requested format is not available' in str(e):
+          cmd = f'''N_m3u8DL-RE "{media}" --key "{wvkeys()}" -H "origin: https://cf-embed.play.hotmart.com" -H "referer: https://cf-embed.play.hotmart.com/" -mt -M mp4 -sv best -sa best --save-name "{n}"'''
+          print(cmd)
+          subprocess.run(cmd)
+          return """
       except PermissionError as e:
         random_sleep()
 
@@ -69,9 +103,9 @@ def process_complementary_readings(complementary_folder, complementarys, session
 
 def download_task(lessons, lesson_name, lesson_media, session, referer):
   output = shorten_folder_name(concat_path(lessons[lesson_name]['path'], f'{clear_folder_name(lesson_name, is_file=True)}.mp4'))
-  ydl_opts = ytdlp_options(output, session)
+  n, ydl_opts = ytdlp_options(output, session)
   ydl_opts['http_headers']['referer'] = referer
-  download_with_retries(ydl_opts, lesson_media)
+  download_with_retries(n, ydl_opts, lesson_media)
 
 
 def download_iframe_video_task(output_path, video_url, session, headers=None):
