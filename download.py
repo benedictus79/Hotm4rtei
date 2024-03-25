@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import yt_dlp
 import re
+from pathlib import Path
 from connection import connect
 from login import requests, BeautifulSoup, course_link
 from utils import concat_path, create_folder, logger, os, random_sleep, shorten_folder_name, clear_folder_name, SilentLogger
@@ -25,7 +26,6 @@ def ytdlp_options(output_folder, session=None):
     'hls_prefer_native': False,
     'extractor_retries': 30,
     'external_downloader': {'m3u8': 'ffmpeg'},
-    'allow_unplayable_formats': True,
     'postprocessors': [{'key': 'FFmpegFixupM3u8'}],
     'socket_timeout': 60,
     'http_chunk_size': 10485760,
@@ -50,11 +50,14 @@ def download_with_retries(n, ydl_opts, media):
           directory_path = os.path.dirname(n)
           file_name = os.path.splitext(os.path.basename(n))[0]
           file_name = re.sub(r'[^a-zA-Z0-9\s]', '', file_name)
-          cmd = f'''N_m3u8DL-RE "{media}" --key {wvkeys()} -H "origin: https://cf-embed.play.hotmart.com" -H "referer: https://cf-embed.play.hotmart.com/" --save-name "{file_name}" -mt -M mp4 -sv best -sa best'''
-          subprocess.run(cmd, encoding='utf-8')
-          source_file_path = f"{file_name}.mp4"
-          shutil.move(source_file_path, directory_path)
-          return 
+          path = concat_path(directory_path, file_name)
+          path = Path(f'{path.strip()}.mp4')
+          if not path.is_file():
+            cmd = f'''N_m3u8DL-RE "{media}" --key "{wvkeys()}" -H "origin: https://cf-embed.play.hotmart.com" -H "referer: https://cf-embed.play.hotmart.com/" --save-name "{file_name.strip()}" -mt -M mp4 -sv best -sa best'''
+            subprocess.run(cmd)
+            source_file_path = f"{file_name}.mp4"
+            shutil.move(source_file_path, directory_path)
+            return 
         ydl.download([media])
         return
       except yt_dlp.utils.DownloadError as e:
