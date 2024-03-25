@@ -37,9 +37,13 @@ def ytdlp_options(output_folder, session=None):
 
 
 def wvkeys(filename='wvkey.txt'):
-  with open(filename, 'r') as file:
-    first_line = file.readline().strip()
-    return first_line
+  with open(filename, 'r+') as file:
+    lines = file.readlines()
+    first_line = lines[0].strip() if lines else None
+    file.seek(0)
+    file.writelines(lines[1:])
+    file.truncate()
+  return first_line
 
 
 def download_with_retries(n, ydl_opts, media):
