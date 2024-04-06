@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 import json
+import threading
 from tqdm import tqdm
 from threading import RLock
 from connection import connect
@@ -88,34 +89,37 @@ def process_media(path, medias):
     download_video(path, i, lesson_video, hotmartsession)
 
 
+def process_iframe(soup, path, iframe):
+  if iframe and is_vimeo_iframe(iframe):
+    video_url = [iframe['src']]
+    find_content(path, video_url, hotmartsession)
+  elif iframe and is_pandavideo_iframe(iframe):
+    video_url = [url_conveter_pandavideo(iframe['src'])]
+    hotmartsession.headers.update(pandavideoheaders(iframe['src']))
+    find_content(path, video_url, hotmartsession)
+  content_folder = create_folder(shorten_folder_name(concat_path(path, 'html')))
+  save_html(content_folder, soup)
+
+
 def process_data(lessons, course_name):
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
 
   for lesson_name, lesson_info in lessons.items():
-    if lesson_info.get('media'):
+    if lesson_info['media']:
       videos_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
       process_media(lesson_info['path'], videos_urls)
-    if lesson_info.get('attachments'):
+    if lesson_info['attachments']:
       attachments_data = [(item['fileMembershipId'], item['fileName']) for item in lesson_info['attachments']]
       find_attachments(lesson_info['path'], attachments_data)
-    if lesson_info.get('complementary_readings'):
-      complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
-      find_complementary_readings(lesson_info['path'], complementary_readings_data)
     if lesson_info.get('webinar'):
       find_webinar(lesson_info['path'], lesson_info['webinar'], hotmartsession)
+    if lesson_info['complementary_readings']:
+      complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
+      find_complementary_readings(lesson_info['path'], complementary_readings_data) 
     if lesson_info.get('content'):
       soup = BeautifulSoup(lesson_info['content'], 'html.parser')
       iframe = soup.find('iframe')
-      if iframe and is_vimeo_iframe(iframe):
-        video_url = [iframe['src']]
-        find_content(lesson_info['path'], video_url, hotmartsession)
-      elif iframe and is_pandavideo_iframe(iframe):
-        video_url = [url_conveter_pandavideo(iframe['src'])]
-        hotmartsession.headers.update(pandavideoheaders(iframe['src']))
-        find_content(lesson_info['path'], video_url, hotmartsession)
-      else:
-        content_folder = create_folder(shorten_folder_name(concat_path(lesson_info['path'], 'html')))
-        save_html(content_folder, soup)
+      process_iframe(soup, lesson_info['path'], iframe)
 
 
 def process_lessons_details(lessons, course_name):
@@ -136,14 +140,16 @@ def process_and_update(module_data, main_course_folder, course_name):
 
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
+  lock = threading.RLock()
   tqdm.set_lock(RLock())
 
   modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
-  partial_functions = [partial(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
 
-  with ThreadPoolExecutor(max_workers=3, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
-    main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
-    for _ in executor.map(lambda f: f(), partial_functions):
+  with ThreadPoolExecutor(max_workers=3, initializer=tqdm.set_lock, initargs=(lock,)) as executor:
+    future_to_module = [executor.submit(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
+    main_progress_bar = tqdm(total=len(future_to_module), desc=course_name, leave=True)
+    for future in as_completed(future_to_module):
+      _ = future.result()
       main_progress_bar.update(1)
 
 
