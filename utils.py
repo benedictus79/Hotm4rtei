@@ -17,7 +17,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Beta 1.3'))
+  print(benedictus.format(name='hotm4rtei', version='Beta 1.5'))
 
 
 def clear_screen():
@@ -47,7 +47,7 @@ def clear_folder_name(name, is_file=None, ext=''):
   return sanitized_base
 
 
-def shorten_folder_name(full_path, max_length=210):
+def shorten_folder_name(full_path, max_length=250):
   if len(full_path) > max_length:
     num_chars_to_remove = len(full_path) - max_length
     directory, file_name = os.path.split(full_path)
@@ -83,28 +83,7 @@ def logger(message, error=None, warning=None):
 
 
 def random_sleep():
-  sleep(random.randint(20, 60))
-
-
-def random_browser():
-  user_agents = {
-    'Windows': [
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36 Edg/90.0.818.66'
-    ],
-    'Linux': [
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
-      'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'
-    ],
-    'macOS': [
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:88.0) Gecko/20100101 Firefox/88.0',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Safari/605.1.15'
-    ]
-  }
-
-  return random.choice(random.choice(list(user_agents.values())))
+  sleep(random.randint(0, 5))
 
 
 class SilentLogger(object):

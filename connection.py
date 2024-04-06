@@ -1,5 +1,5 @@
 from login import requests, url_token, username, password, course_name, course_link
-from utils import random_browser, logger, random_sleep
+from utils import logger, random_sleep
 
 
 def refresh_token(url_token=url_token, username=username, password=password):
@@ -19,7 +19,6 @@ def refresh_token(url_token=url_token, username=username, password=password):
   access_token = response.json()['access_token']
   hotmart_new_session.headers['club'] = course_name
   hotmart_new_session.headers['referer'] = course_link
-  hotmart_new_session.headers['user-agent'] = random_browser()
   hotmart_new_session.headers.update({'Authorization': f'Bearer {access_token}'})
 
   return hotmart_new_session

@@ -1,11 +1,13 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 import json
 from tqdm import tqdm
 from threading import RLock
 from connection import connect
 from login import hotmartsession, course_name, token, BeautifulSoup
-from utils import clear_folder_name, concat_path, create_folder, random_browser, logger, shorten_folder_name
-from download import download_video
+from utils import clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
+from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, process_complementary_readings, process_webinar, save_html, url_conveter_pandavideo, pandavideoheaders
+import datetime
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -30,7 +32,7 @@ def extract_lessons_details(module_folder, lessons):
         'complementary_readings': content_lesson.get('complementaryReadings', []),
       }
       if content_lesson.get('type') == 'WEBINAR':
-        lesson_detail[lesson_name]['webinar'] = f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[lesson_name]['content']}/private'''
+        lesson_detail[lesson_name]['webinar'] = [f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[lesson_name]['content']}/private''']
         lesson_detail[lesson_name]['content'] = ''
 
   return lesson_detail
@@ -39,6 +41,34 @@ def extract_lessons_details(module_folder, lessons):
 def extract_modules_details(index, module_title, main_course_folder):
   module_folder =  create_folder(shorten_folder_name(concat_path(main_course_folder, f'{index:03d} - {clear_folder_name(module_title)}')))
   return module_folder
+
+
+def find_webinar(path, webinars, hotmartsession):
+  for i, webinar in enumerate(webinars):
+    webinar_folder = create_folder(shorten_folder_name(concat_path(path, 'webinar')))
+    process_webinar(webinar_folder, i, webinar, hotmartsession)
+
+
+def find_complementary_readings(path, complementary_readings):
+  for i, complementary in enumerate(complementary_readings, start=1):
+    complementary_url, complementary_name = complementary
+    complementary_name = f'{i:03d} - {complementary_name}'
+    complementary_folder = create_folder(shorten_folder_name(concat_path(path, 'complemento')))
+    process_complementary_readings(complementary_folder, complementary_url, complementary_name, hotmartsession)
+
+
+def find_content(path, contents, session):
+  for i, content in enumerate(contents, start=1):
+    output_path = shorten_folder_name(concat_path(path, f'{i:03d} - aula.mp4'))
+    download_complementary(output_path, content, session)
+
+
+def find_attachments(path, attachments):
+  for i, attachment in enumerate(attachments, start=1):
+    attachment_id, attachment_name = attachment
+    attachment_name = f'{i:03d} - {attachment_name}'
+    material_folder = create_folder(shorten_folder_name(concat_path(path, 'material')))
+    download_attachments(material_folder, attachment_id, attachment_name, hotmartsession)
 
 
 def find_video(lesson_video):
@@ -51,45 +81,45 @@ def find_video(lesson_video):
     return urls[0]
 
 
-def process_multiple_media(lesson_name, lesson_info):
-  updated_lesson_info = {}
-  media_src_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
-  for i, media in enumerate(media_src_urls, start=1):
+def process_media(path, medias):
+  for i, media in enumerate(medias, start=1):
     lesson_video = connect(media, hotmartsession)
     lesson_video = find_video(lesson_video)
-    part_lesson_name = f'{lesson_name} - Parte {i}'
-    updated_lesson_info[part_lesson_name] = lesson_info.copy()
-    updated_lesson_info[part_lesson_name]['referer_media'] = media
-    updated_lesson_info[part_lesson_name]['media'] = [lesson_video]
-  
-  return updated_lesson_info
+    download_video(path, i, lesson_video, hotmartsession)
 
 
-def process_media(lessons, course_name):
-  updated_lessons = {}
-  hotmartsession.headers['user-agent'] = random_browser()
+def process_data(lessons, course_name):
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
 
   for lesson_name, lesson_info in lessons.items():
-    if len(lesson_info['media']) > 1:
-      updated_lessons.update(process_multiple_media(lesson_name, lesson_info))
-      continue
-    
-    updated_lessons[lesson_name] = lesson_info
-    
-    if lesson_info['media']:
-      lesson_video = connect(lesson_info['media'][0]['mediaSrcUrl'], hotmartsession)
-      lesson_video = find_video(lesson_video)
-      updated_lessons[lesson_name]['referer_media'] = lesson_info['media'][0]['mediaSrcUrl']
-      updated_lessons[lesson_name]['media'] = [lesson_video]
-
-  return updated_lessons
+    if lesson_info.get('media'):
+      videos_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
+      process_media(lesson_info['path'], videos_urls)
+    if lesson_info.get('attachments'):
+      attachments_data = [(item['fileMembershipId'], item['fileName']) for item in lesson_info['attachments']]
+      find_attachments(lesson_info['path'], attachments_data)
+    if lesson_info.get('complementary_readings'):
+      complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
+      find_complementary_readings(lesson_info['path'], complementary_readings_data)
+    if lesson_info.get('webinar'):
+      find_webinar(lesson_info['path'], lesson_info['webinar'], hotmartsession)
+    if lesson_info.get('content'):
+      soup = BeautifulSoup(lesson_info['content'], 'html.parser')
+      iframe = soup.find('iframe')
+      if iframe and is_vimeo_iframe(iframe):
+        video_url = [iframe['src']]
+        find_content(lesson_info['path'], video_url, hotmartsession)
+      elif iframe and is_pandavideo_iframe(iframe):
+        video_url = [url_conveter_pandavideo(iframe['src'])]
+        hotmartsession.headers.update(pandavideoheaders(iframe['src']))
+        find_content(lesson_info['path'], video_url, hotmartsession)
+      else:
+        content_folder = create_folder(shorten_folder_name(concat_path(lesson_info['path'], 'html')))
+        save_html(content_folder, soup)
 
 
 def process_lessons_details(lessons, course_name):
-  processed_lessons = process_media(lessons, course_name)
-  download_video(processed_lessons, hotmartsession)
-
+  processed_lessons = process_data(lessons, course_name)
   return processed_lessons
 
 
@@ -107,11 +137,13 @@ def process_and_update(module_data, main_course_folder, course_name):
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
   tqdm.set_lock(RLock())
-  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
 
-  with tqdm(total=len(modules), desc=course_name, leave=True) as main_progress_bar:
-    for module_data in modules_data:
-      process_module(module_data, main_course_folder, course_name)
+  modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
+  partial_functions = [partial(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
+
+  with ThreadPoolExecutor(max_workers=3, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as executor:
+    main_progress_bar = tqdm(total=len(modules), desc=course_name, leave=True)
+    for _ in executor.map(lambda f: f(), partial_functions):
       main_progress_bar.update(1)
 
 
@@ -131,4 +163,8 @@ def redirect_club_hotmart(course_name, access_token):
 
 
 if __name__ == '__main__':
+  start_time = datetime.datetime.now()
+  print(f"Início da execução: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
   redirect_club_hotmart(course_name, token)
+  end_time = datetime.datetime.now()
+  print(f"Fim da execução: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
