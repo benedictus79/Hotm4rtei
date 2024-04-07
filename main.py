@@ -187,7 +187,7 @@ def redirect_club_hotmart(course_name, access_token):
 
 if __name__ == '__main__':
   start_time = datetime.datetime.now()
-  print(f'Início da execução: {start_time.strftime('%Y-%m-%d %H:%M:%S')}')
+  print(f'Início da execução: {start_time.strftime("%Y-%m-%d %H:%M:%S")}')
   redirect_club_hotmart(course_name, token)
   end_time = datetime.datetime.now()
-  print(f'Fim da execução: {end_time.strftime('%Y-%m-%d %H:%M:%S')}')
+  print(f'Fim da execução: {end_time.strftime("%Y-%m-%d %H:%M:%S")}')
