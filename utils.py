@@ -47,7 +47,7 @@ def clear_folder_name(name, is_file=None, ext=''):
   return sanitized_base
 
 
-def shorten_folder_name(full_path, max_length=250):
+def shorten_folder_name(full_path, max_length=249):
   if len(full_path) > max_length:
     num_chars_to_remove = len(full_path) - max_length
     directory, file_name = os.path.split(full_path)
