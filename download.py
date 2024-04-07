@@ -27,17 +27,18 @@ def ytdlp_options(output_folder, session=None):
 
 
 def download_with_ffmpeg(decryption_key, name_lesson, url):
-  cmd = [
-    'ffmpeg',
-    '-cenc_decryption_key', decryption_key,
-    '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
-    '-y',
-    '-i', url,
-    '-codec', 'copy',
-    '-threads', '10',
-    f'{name_lesson}.mp4'
-  ]
-  return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  if not os.path.exists(f'{name_lesson}.mp4'):
+    cmd = [
+      'ffmpeg',
+      '-cenc_decryption_key', decryption_key,
+      '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
+      '-y',
+      '-i', url,
+      '-codec', 'copy',
+      '-threads', '10',
+      f'{name_lesson}.mp4'
+    ]
+    return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def download_with_ytdlp(ydl_opts, media):
@@ -141,7 +142,7 @@ def download_video(path, index, lesson_video, session):
     }
     decryption_key = get_key_drm(wv_data)
     name_lesson = concat_path(path, f' {index:03} - aula')
-    logger(f'''Conteúdo com DRM encontrado, tentando com FFMPEG: {name_lesson} ||| {lesson_video['url']} ||||{decryption_key}''', warning=True)
+    logger(f'''Conteúdo com DRM encontrado, tentando com FFMPEG: {name_lesson} ||| {lesson_video['url']} |||| {decryption_key}''', warning=True)
     return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
     
   output = shorten_folder_name(concat_path(path, f'{index:03} - aula.mp4'))
