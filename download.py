@@ -86,13 +86,13 @@ def get_license(lesson_video, session):
     'content-type': 'application/octet-stream',
     'dnt': '1',
     'keysystem': 'com.widevine.alpha',
-    'membership': f'{lesson_video['clubMembershipId']}',
+    'membership': f'{lesson_video["clubMembershipId"]}',
     'origin': 'https://cf-embed.play.hotmart.com',
     'pragma': 'no-cache',
     'referer': 'https://cf-embed.play.hotmart.com/',
   }
   response = session.post(
-    f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video['mediaCode']}/license',
+    f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video["mediaCode"]}/license',
     params=params,
     headers=headers,
     data=data,
@@ -101,28 +101,28 @@ def get_license(lesson_video, session):
 
 
 def get_key_drm(data):
-  api_url = "https://cdrm-project.com/api"
+  api_url = 'https://cdrm-project.com/api'
   license_url = data['license']
   pssh = data['pssh']
   json_data = {
-    "license": license_url,
-    "headers": 'accept: "*/*"\naccept-language: "pt-BR,pt;q=0.7"\ncache-control: no-cache\ncontent-type: application/octet-stream\ndnt: "1"\nkeysystem: com.widevine.alpha\norigin: "https://cf-embed.play.hotmart.com"\npragma: no-cache\nreferer: "https://cf-embed.play.hotmart.com/"\nuser-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"',
-    "pssh": pssh,
-    "buildInfo": "",
-    "proxy": "",
-    "cache": False,
+    'license': license_url,
+    'headers': 'accept: "*/*"\naccept-language: "pt-BR,pt;q=0.7"\ncache-control: no-cache\ncontent-type: application/octet-stream\ndnt: "1"\nkeysystem: com.widevine.alpha\norigin: "https://cf-embed.play.hotmart.com"\npragma: no-cache\nreferer: "https://cf-embed.play.hotmart.com/"\nuser-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"',
+    'pssh': pssh,
+    'buildInfo': '',
+    'proxy': '',
+    'cache': False,
   }
   headers = {
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,gl;q=0.6,es;q=0.5",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "Origin": "https://cdrm-project.com",
-    "Pragma": "no-cache",
-    "Referer": "https://cdrm-project.com/",
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
-    "Sec-Fetch-Site": "same-origin",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,gl;q=0.6,es;q=0.5',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Origin': 'https://cdrm-project.com',
+    'Pragma': 'no-cache',
+    'Referer': 'https://cdrm-project.com/',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
   }
   r = requests.post(api_url, json=json_data, headers=headers).json()
   decryption_key = r['keys'][0]['key'].split(':')[1]

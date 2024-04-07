@@ -84,7 +84,7 @@ def find_video(lesson_video):
     if not preferred_url:
       preferred_url = [asset.get('url') for asset in media_assets if 'url' in asset]
       preferred_url = preferred_url[0]
-    preferred_url = preferred_url if preferred_url else ""
+    preferred_url = preferred_url if preferred_url else ''
     signature = application_data.get('signature', '')
     mediaCode = application_data.get('mediaCode', '')
     userCode = application_data.get('userCode', '')
@@ -92,11 +92,11 @@ def find_video(lesson_video):
     clubMembershipId = application_data.get('clubMembershipId', '')
     
     return_data = {
-        "url": preferred_url,
-        "signature": signature,
-        "mediaCode": mediaCode,
-        "userCode": userCode,
-        "applicationKey": applicationKey,
+        'url': preferred_url,
+        'signature': signature,
+        'mediaCode': mediaCode,
+        'userCode': userCode,
+        'applicationKey': applicationKey,
         'clubMembershipId': clubMembershipId,
     }
     return return_data
@@ -187,7 +187,7 @@ def redirect_club_hotmart(course_name, access_token):
 
 if __name__ == '__main__':
   start_time = datetime.datetime.now()
-  print(f"Início da execução: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+  print(f'Início da execução: {start_time.strftime('%Y-%m-%d %H:%M:%S')}')
   redirect_club_hotmart(course_name, token)
   end_time = datetime.datetime.now()
-  print(f"Fim da execução: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+  print(f'Fim da execução: {end_time.strftime('%Y-%m-%d %H:%M:%S')}')
