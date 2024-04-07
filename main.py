@@ -77,9 +77,29 @@ def find_video(lesson_video):
   script_tag = soup.find('script', {'id': '__NEXT_DATA__'})
   if script_tag:
     data = json.loads(script_tag.string)
-    media_assets = data.get('props', {}).get('pageProps', {}).get('applicationData', {}).get('mediaAssets', [])
-    urls = [asset.get('url') for asset in media_assets if 'url' in asset]
-    return urls[0]
+    application_data = data.get('props', {}).get('pageProps', {}).get('applicationData', {})
+    media_assets = application_data.get('mediaAssets', [])
+    drm_urls = [asset.get('url') for asset in media_assets if 'url' in asset and '/drm/' in asset.get('url')]
+    preferred_url = next((url for url in drm_urls if '.mpd' in url), None)
+    if not preferred_url:
+      preferred_url = [asset.get('url') for asset in media_assets if 'url' in asset]
+      preferred_url = preferred_url[0]
+    preferred_url = preferred_url if preferred_url else ""
+    signature = application_data.get('signature', '')
+    mediaCode = application_data.get('mediaCode', '')
+    userCode = application_data.get('userCode', '')
+    applicationKey = application_data.get('applicationKey', '')
+    clubMembershipId = application_data.get('clubMembershipId', '')
+    
+    return_data = {
+        "url": preferred_url,
+        "signature": signature,
+        "mediaCode": mediaCode,
+        "userCode": userCode,
+        "applicationKey": applicationKey,
+        'clubMembershipId': clubMembershipId,
+    }
+    return return_data
 
 
 def process_media(path, medias):
@@ -97,8 +117,9 @@ def process_iframe(soup, path, iframe):
     video_url = [url_conveter_pandavideo(iframe['src'])]
     hotmartsession.headers.update(pandavideoheaders(iframe['src']))
     find_content(path, video_url, hotmartsession)
-  content_folder = create_folder(shorten_folder_name(concat_path(path, 'html')))
-  save_html(content_folder, soup)
+  else:
+    content_folder = create_folder(shorten_folder_name(concat_path(path, 'html')))
+    save_html(content_folder, soup)
 
 
 def process_data(lessons, course_name):
@@ -132,10 +153,6 @@ def process_module(module, main_course_folder, course_name):
   if module_folder:
     lessons = extract_lessons_details(module_folder, module['pages'])
     process_lessons_details(lessons, course_name)
-
-
-def process_and_update(module_data, main_course_folder, course_name):
-  process_module(module_data, main_course_folder, course_name)
 
 
 def list_modules(course_name, modules):
