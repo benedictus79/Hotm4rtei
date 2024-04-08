@@ -155,6 +155,10 @@ def process_module(module, main_course_folder, course_name):
     process_lessons_details(lessons, course_name)
 
 
+def update_progress_bar(future, progress_bar):
+  progress_bar.update(1)
+
+
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
   lock = threading.RLock()
@@ -166,8 +170,7 @@ def list_modules(course_name, modules):
     future_to_module = [executor.submit(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
     main_progress_bar = tqdm(total=len(future_to_module), desc=course_name, leave=True)
     for future in as_completed(future_to_module):
-      _ = future.result()
-      main_progress_bar.update(1)
+      future.add_done_callback(lambda _ : update_progress_bar(_, main_progress_bar))
 
 
 def redirect_club_hotmart(course_name, access_token):

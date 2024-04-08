@@ -151,9 +151,10 @@ def download_video(path, index, lesson_video, session):
 
 
 def download_file(path, attachments):
-  with open(shorten_folder_name(path), 'wb') as file:
-    for chunk in attachments.iter_content(chunk_size=8192):
-      file.write(chunk)
+  if not os.path.exists(path):
+    with open(shorten_folder_name(path), 'wb') as file:
+      for chunk in attachments.iter_content(chunk_size=8192):
+        file.write(chunk)
 
 
 def download_attachments(material_folder, attachment_id, attachment_name, session):
