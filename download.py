@@ -1,7 +1,7 @@
 import subprocess
 import yt_dlp
 import re
-from connection import connect
+from connection import connect, connect_license_drm
 from login import requests, BeautifulSoup
 from utils import concat_path, create_folder, logger, os, random_sleep, shorten_folder_name, clear_folder_name, SilentLogger
 
@@ -9,7 +9,7 @@ from utils import concat_path, create_folder, logger, os, random_sleep, shorten_
 def ytdlp_options(output_folder, session=None):
   options = {
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
-    'outtmpl': output_folder,
+    'outtmpl': f'{output_folder}.%(ext)s',
     'quiet': True,
     'no_progress': True,
     'logger': SilentLogger(),
@@ -35,7 +35,7 @@ def download_with_ffmpeg(decryption_key, name_lesson, url):
       '-y',
       '-i', url,
       '-codec', 'copy',
-      '-threads', '10',
+      '-threads', '4',
       f'{name_lesson}.mp4'
     ]
     return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -54,13 +54,13 @@ def process_webinar(webinar_folder, index, webinar, session):
   response = connect(webinar, session)
   response = session.get(webinar).json()
   webinar_link, webinar_title = response['url'], response['name']
-  webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}.mp4')
+  webinar_folder = concat_path(webinar_folder, f'{index:03d} - {webinar_title}')
   return download_complementary(webinar_folder, webinar_link)
 
 
 def process_complementary_readings(complementary_folder, complementary_url, complementarys_name, session):
   if 'youtube' in complementary_url or 'youtu.be' in complementary_url:
-    new_complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{complementarys_name}.mp4'))
+    new_complementary_folder = shorten_folder_name(concat_path(complementary_folder, f'{complementarys_name}'))
     return download_complementary(new_complementary_folder, complementary_url)
   elif complementary_url:
     return save_link(complementary_folder, complementary_url, complementarys_name)
@@ -93,13 +93,15 @@ def get_license(lesson_video, session):
     'pragma': 'no-cache',
     'referer': 'https://cf-embed.play.hotmart.com/',
   }
-  response = session.post(
+  url = f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video["mediaCode"]}/license'
+  return connect_license_drm(url, session, params, data, headers)
+  """ response = session.post(
     f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video["mediaCode"]}/license',
     params=params,
     headers=headers,
     data=data,
   )
-  return response.url
+  return response.url """
 
 
 def get_key_drm(data):
@@ -142,17 +144,18 @@ def download_video(path, index, lesson_video, session):
     }
     decryption_key = get_key_drm(wv_data)
     name_lesson = shorten_folder_name(concat_path(path, f' {index:03} - aula'))
-    logger(f'''Conteúdo com DRM encontrado, tentando com FFMPEG: {name_lesson} ||| {lesson_video['url']} |||| {decryption_key}''', warning=True)
+    logger(f'''Conteúdo com DRM encontrado, pode ter dados importantes, tentando download com FFMPEG: {name_lesson} ||| {lesson_video['url']} |||| {decryption_key}''', warning=True)
     return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
     
-  output = shorten_folder_name(concat_path(path, f'{index:03} - aula.mp4'))
+  output = shorten_folder_name(concat_path(path, f'{index:03} - aula'))
   ydl_opts = ytdlp_options(output, session)
   return download_with_ytdlp(ydl_opts, lesson_video['url'])
 
 
 def download_file(path, attachments):
+  path = shorten_folder_name(path)
   if not os.path.exists(path):
-    with open(shorten_folder_name(path), 'wb') as file:
+    with open(path, 'wb') as file:
       for chunk in attachments.iter_content(chunk_size=8192):
         file.write(chunk)
 
@@ -168,10 +171,10 @@ def download_attachments(material_folder, attachment_id, attachment_name, sessio
     session.headers['authority'] = 'drm-protection.cb.hotmart.com'
     session.headers['token'] = response.get('token')
     attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
-    attachments = connect(attachments_url, session)
+    attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
     download_file(path, attachments)
-    logger(f'Verifique o arquivo manualmente, pode ter dados importantes: {path}', warning=True)
+    logger(f'Conteúdo com DRM encontrado, pode ter dados importantes, download em: {path}', warning=True)
 
 
 def save_html(content_folder, html):

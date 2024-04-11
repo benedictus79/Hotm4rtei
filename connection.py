@@ -28,14 +28,29 @@ def connect(url, session):
   try:
     return session.get(url)
   except requests.exceptions.ConnectionError as e:
+    logger(f'Possivelmente seu token expirou, tentando novamente: {e} ||| {url}', warning=True)
     random_sleep()
-    logger(f'Possivelmente seu token expirou, tentando novamente: {e}', warning=True)
     new_session = refresh_token(url_token)
     return new_session.get(url)
 
 
-def check_forbidden(ydl_opts, media, session):
-  new_session = connect(media, session)
-  ydl_opts['http_headers'] = new_session
-  
-  return ydl_opts
+def connect_license_drm(url, session, params, data, headers):
+  try:
+    response = session.post(
+    url,
+    params=params,
+    headers=headers,
+    data=data,
+    )
+    return response.url
+  except requests.exceptions.ConnectionError as e:
+    random_sleep()
+    logger(f'API-DRM demorou a responder, tentando novamente: {e} ||| {url}', warning=True)
+    new_session = refresh_token(url_token)
+    response = new_session.post(
+    url,
+    params=params,
+    headers=headers,
+    data=data,
+    )
+    return response.url
