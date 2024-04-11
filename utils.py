@@ -17,7 +17,7 @@ def benedictus_ascii_art():
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Legend 1.1'))
+  print(benedictus.format(name='hotm4rtei', version='Legend 1.2'))
 
 
 def clear_screen():
@@ -83,7 +83,15 @@ def logger(message, error=None, warning=None):
 
 
 def random_sleep():
-  sleep(random.randint(0, 5))
+  sleep(random.randint(3, 7))
+
+
+def remove_file(file_path):
+  try:
+    os.remove(file_path)
+  except OSError as e:
+    msg = f"Erro ao remover o arquivo '{file_path}': {e.strerror}"
+    logger(msg, error=True)
 
 
 class SilentLogger(object):
@@ -97,3 +105,4 @@ class SilentLogger(object):
     if 'HTTP Error 403' in str(msg):return
     if 'No such file or directory' in str(msg):return
     logger(msg, error=True)
+

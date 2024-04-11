@@ -1,14 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
 import json
 import threading
 from tqdm import tqdm
-from threading import RLock
 from connection import connect
 from login import hotmartsession, course_name, token, BeautifulSoup
-from utils import clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
+from utils import datetime, clear_folder_name, concat_path, create_folder, logger, remove_file, shorten_folder_name
 from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, process_complementary_readings, process_webinar, save_html, url_conveter_pandavideo, pandavideoheaders
-import datetime
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -35,7 +32,7 @@ def extract_lessons_details(module_folder, lessons):
       if content_lesson.get('type') == 'WEBINAR':
         lesson_detail[lesson_name]['webinar'] = [f'''https://api-live-admin.play.hotmart.com/v1/schedule/{lesson_detail[lesson_name]['content']}/private''']
         lesson_detail[lesson_name]['content'] = ''
-
+  
   return lesson_detail
 
 
@@ -60,7 +57,7 @@ def find_complementary_readings(path, complementary_readings):
 
 def find_content(path, contents, session):
   for i, content in enumerate(contents, start=1):
-    output_path = shorten_folder_name(concat_path(path, f'{i:03d} - aula.mp4'))
+    output_path = shorten_folder_name(concat_path(path, f'{i:03d} - aula'))
     download_complementary(output_path, content, session)
 
 
@@ -122,56 +119,53 @@ def process_iframe(soup, path, iframe):
     save_html(content_folder, soup)
 
 
-def process_data(lessons, course_name):
-  hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
-
-  for lesson_name, lesson_info in lessons.items():
-    if lesson_info['media']:
-      videos_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
-      process_media(lesson_info['path'], videos_urls)
-    if lesson_info['attachments']:
-      attachments_data = [(item['fileMembershipId'], item['fileName']) for item in lesson_info['attachments']]
-      find_attachments(lesson_info['path'], attachments_data)
-    if lesson_info.get('webinar'):
-      find_webinar(lesson_info['path'], lesson_info['webinar'], hotmartsession)
-    if lesson_info['complementary_readings']:
-      complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
-      find_complementary_readings(lesson_info['path'], complementary_readings_data) 
-    if lesson_info.get('content'):
-      soup = BeautifulSoup(lesson_info['content'], 'html.parser')
-      iframe = soup.find('iframe')
-      process_iframe(soup, lesson_info['path'], iframe)
+def process_lesson(lesson_name, lesson_info):
+  if lesson_info['media']:
+    videos_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
+    process_media(lesson_info['path'], videos_urls)
+  if lesson_info['attachments']:
+    attachments_data = [(item['fileMembershipId'], item['fileName']) for item in lesson_info['attachments']]
+    find_attachments(lesson_info['path'], attachments_data)
+  if lesson_info.get('webinar'):
+    find_webinar(lesson_info['path'], lesson_info['webinar'])
+  if lesson_info['complementary_readings']:
+    complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
+    find_complementary_readings(lesson_info['path'], complementary_readings_data, hotmartsession)
+  if lesson_info.get('content'):
+    soup = BeautifulSoup(lesson_info['content'], 'html.parser')
+    iframe = soup.find('iframe')
+    process_iframe(soup, lesson_info['path'], iframe)
 
 
 def process_lessons_details(lessons, course_name):
-  processed_lessons = process_data(lessons, course_name)
-  return processed_lessons
+  hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
+      
+  with ThreadPoolExecutor(max_workers=3) as executor:
+    for lesson_name, lesson_info in lessons.items():
+      executor.submit(process_lesson, lesson_name, lesson_info)
 
 
-def process_module(module, main_course_folder, course_name):
-  module_folder = extract_modules_details(module['index'], module['name'], main_course_folder)
-  if module_folder:
-    lessons = extract_lessons_details(module_folder, module['pages'])
-    process_lessons_details(lessons, course_name)
-
-
-def update_progress_bar(future, progress_bar):
-  progress_bar.update(1)
+def process_module(module_data, main_course_folder, course_name):
+  try:
+    module_folder = extract_modules_details(module_data['index'], module_data['name'], main_course_folder)
+    if module_folder:
+      lessons = extract_lessons_details(module_folder, module_data['pages'])
+      process_lessons_details(lessons, course_name)
+  except Exception as e:
+    msg = f"Erro ao processar módulo, verifique manualmente: {module_data['name']} ||| {e}"
+    return logger(msg, error=True)
 
 
 def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
   lock = threading.RLock()
-  tqdm.set_lock(RLock())
-
+  tqdm.set_lock(lock)
   modules_data = [{'index': i, 'name': module['name'], 'pages': module['pages']} for i, module in enumerate(modules, start=1)]
-
-  with ThreadPoolExecutor(max_workers=3, initializer=tqdm.set_lock, initargs=(lock,)) as executor:
-    future_to_module = [executor.submit(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
-    main_progress_bar = tqdm(total=len(future_to_module), desc=course_name, leave=True)
-    for future in as_completed(future_to_module):
-      future.add_done_callback(lambda _ : update_progress_bar(_, main_progress_bar))
-
+  
+  with ThreadPoolExecutor(max_workers=3) as executor:
+    futures = [executor.submit(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
+    for future in tqdm(futures, total=len(futures), desc=course_name, leave=True):
+      future.result()
 
 def redirect_club_hotmart(course_name, access_token):
   hotmartsession.headers['authorization'] = f'Bearer {access_token}'
@@ -189,8 +183,8 @@ def redirect_club_hotmart(course_name, access_token):
 
 
 if __name__ == '__main__':
-  start_time = datetime.datetime.now()
+  start_time = datetime.now()
   print(f'Início da execução: {start_time.strftime("%Y-%m-%d %H:%M:%S")}')
   redirect_club_hotmart(course_name, token)
-  end_time = datetime.datetime.now()
+  end_time = datetime.now()
   print(f'Fim da execução: {end_time.strftime("%Y-%m-%d %H:%M:%S")}')
