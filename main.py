@@ -164,7 +164,7 @@ def list_modules(course_name, modules):
   
   with ThreadPoolExecutor(max_workers=3) as executor:
     futures = [executor.submit(process_module, module_data, main_course_folder, course_name) for module_data in modules_data]
-    for future in tqdm(futures, total=len(futures), desc=course_name, leave=True):
+    for future in tqdm(as_completed(futures), total=len(futures), desc=course_name, leave=True):
       future.result()
 
 def redirect_club_hotmart(course_name, access_token):
