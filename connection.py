@@ -45,7 +45,7 @@ def connect_license_drm(url, session, params, data, headers):
     return response.url
   except requests.exceptions.ConnectionError as e:
     random_sleep()
-    logger(f'API-DRM demorou a responder, tentando novamente: {e} ||| {url}', warning=True)
+    logger(f'URL license demorou a responder, tentando novamente: {e} ||| {url}', warning=True)
     new_session = refresh_token(url_token)
     response = new_session.post(
     url,
