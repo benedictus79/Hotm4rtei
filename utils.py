@@ -39,7 +39,6 @@ def clear_folder_name(name, is_file=None, ext=''):
   sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', ' ', name).strip()
   return sanitized_base + ext if ext else sanitized_base
 
-complemento
 
 def shorten_folder_name(full_path, max_length=241):
   if len(full_path) > max_length:
