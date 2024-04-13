@@ -36,18 +36,11 @@ def create_folder(folder_name):
 def clear_folder_name(name, is_file=None, ext=''):
   if is_file:
     name, ext = os.path.splitext(name)
-
-  sanitized_base = re.sub(r'[<>:."/\\|?*]', ' ', name)
-  sanitized_base = re.sub(r'\s+', ' ', sanitized_base).strip()
-  sanitized_base = re.sub(r'\.$', '', sanitized_base)
-
-  if ext:
-    return sanitized_base + ext
-
-  return sanitized_base
+  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', ' ', name).strip()
+  return sanitized_base + ext if ext else sanitized_base
 
 
-def shorten_folder_name(full_path, max_length=249):
+def shorten_folder_name(full_path, max_length=245):
   if len(full_path) > max_length:
     num_chars_to_remove = len(full_path) - max_length
     directory, file_name = os.path.split(full_path)
