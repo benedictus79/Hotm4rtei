@@ -19,6 +19,7 @@ def ytdlp_options(output_folder, session=None):
     'retries': 30,
     'continuedl': True,
     'extractor_retries': 30,
+    'trim_file_name': 249,
   }
   if session:
     options['http_headers'] = session.headers
@@ -95,13 +96,6 @@ def get_license(lesson_video, session):
   }
   url = f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video["mediaCode"]}/license'
   return connect_license_drm(url, session, params, data, headers)
-  """ response = session.post(
-    f'https://api-player-embed.hotmart.com/v2/drm/{lesson_video["mediaCode"]}/license',
-    params=params,
-    headers=headers,
-    data=data,
-  )
-  return response.url """
 
 
 def get_key_drm(data):
@@ -154,10 +148,9 @@ def download_video(path, index, lesson_video, session):
 
 def download_file(path, attachments):
   path = shorten_folder_name(path)
-  if not os.path.exists(path):
-    with open(path, 'wb') as file:
-      for chunk in attachments.iter_content(chunk_size=8192):
-        file.write(chunk)
+  with open(path, 'wb') as file:
+    for chunk in attachments.iter_content(chunk_size=8192):
+      file.write(chunk)
 
 
 def download_attachments(material_folder, attachment_id, attachment_name, session):
@@ -166,14 +159,14 @@ def download_attachments(material_folder, attachment_id, attachment_name, sessio
     attachments_url = response['directDownloadUrl']
     attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
-    download_file(path, attachments)
+    if not os.path.exists(path):download_file(path, attachments)
   elif response.get('lambdaUrl'):
     session.headers['authority'] = 'drm-protection.cb.hotmart.com'
     session.headers['token'] = response.get('token')
     attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
     attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
-    download_file(path, attachments)
+    if not os.path.exists(path):download_file(path, attachments)
     logger(f'Conteúdo com DRM encontrado, pode ter dados importantes, download em: {path}', warning=True)
 
 

@@ -152,7 +152,7 @@ def process_module(module_data, main_course_folder, course_name):
       lessons = extract_lessons_details(module_folder, module_data['pages'])
       process_lessons_details(lessons, course_name)
   except Exception as e:
-    msg = f"Erro ao processar módulo, verifique manualmente: {module_data['name']} ||| {e}"
+    msg = f"Erro ao processar módulo, verifique manualmente: {str(module_folder)} ||| {e}"
     return logger(msg, error=True)
 
 
