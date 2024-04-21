@@ -36,9 +36,9 @@ Após instalar todas as dependências, você pode executar o script com o seguin
 ## Suporte
 Para perguntas ou suporte, por favor, entre em contato conosco ou sinta-se à vontade para perguntar na sessão de issues.
 
-- **Email**: [benedictus79@disroot.org](mailto:benedictus79@disroot.org)
-- **Telegram**: [https://t.me/benedictus79](https://t.me/benedictus79)
-- **Comunidade**: [https://t.me/alex4ndriachannel](https://t.me/alex4ndriachannel)
+- **Email**: [Email contato](mailto:benedictus79@disroot.org)
+- **Telegram**: [Telegram Contato](https://t.me/benedictus79)
+- **Comunidade**: [Telegram Comunidade](https://t.me/+DoZ_EeKWN0NhY2Ix)
 
 ## Contribuições
 Contribuições para o script são bem-vindas. Sinta-se à vontade para criar um 'pull request' ou discutir melhorias na seção 'Issues'.

@@ -13,7 +13,7 @@ def benedictus_ascii_art():
     |_||_|\___/ |_| |_|  |_| |_||_|_\ |_| |___|___|
     
   Author: Benedictus ©
-  Community: https://t.me/alex4ndriagroup
+  Community: https://t.me/+7imfib1o0CQwNmUx
   Script: {name}
   Version: {version}
   """
@@ -36,21 +36,17 @@ def create_folder(folder_name):
 def clear_folder_name(name, is_file=None, ext=''):
   if is_file:
     name, ext = os.path.splitext(name)
-  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', ' ', name).strip()
+  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', '', name).strip()
   return sanitized_base + ext if ext else sanitized_base
 
 
 def shorten_folder_name(full_path, max_length=241):
-  if len(full_path) > max_length:
-    num_chars_to_remove = len(full_path) - max_length
-    directory, file_name = os.path.split(full_path)
-    base_name, extension = os.path.splitext(file_name)
-    num_chars_to_remove = min(num_chars_to_remove, len(base_name))
-    shortened_name = base_name[:-num_chars_to_remove] + extension
-    new_full_path = os.path.join(directory, shortened_name)
-    return new_full_path
-    
-  return full_path
+  if len(full_path) <= max_length:
+    return full_path
+  directory, file_name = os.path.split(full_path)
+  base_name, extension = os.path.splitext(file_name)
+  base_name = base_name[:max_length - len(directory) - len(extension) - 1]
+  return os.path.join(directory, base_name + extension)
 
 
 def concat_path(path, subpath, lesson=None):
