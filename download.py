@@ -20,8 +20,7 @@ def ytdlp_options(output_folder, session=None):
     'continuedl': True,
     'extractor_retries': 30,
     'trim_file_name': 249,
-    'hls_use_mpegts': True,
-    'hls_prefer_native': False,
+    'hls_prefer_native': {'m3u8': 'ffmpeg'},
   }
   if session:
     options['http_headers'] = session.headers
@@ -150,9 +149,10 @@ def download_video(path, index, lesson_video, session):
 
 def download_file(path, attachments):
   path = shorten_folder_name(path)
-  with open(path, 'wb') as file:
-    for chunk in attachments.iter_content(chunk_size=8192):
-      file.write(chunk)
+  if not os.path.exists(path):
+    with open(path, 'wb') as file:
+      for chunk in attachments.iter_content(chunk_size=8192):
+        file.write(chunk)
 
 
 def download_attachments(material_folder, attachment_id, attachment_name, session):
@@ -161,14 +161,14 @@ def download_attachments(material_folder, attachment_id, attachment_name, sessio
     attachments_url = response['directDownloadUrl']
     attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
-    if not os.path.exists(path):download_file(path, attachments)
+    download_file(path, attachments)
   elif response.get('lambdaUrl'):
     session.headers['authority'] = 'drm-protection.cb.hotmart.com'
     session.headers['token'] = response.get('token')
     attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
     attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
-    if not os.path.exists(path):download_file(path, attachments)
+    download_file(path, attachments)
     logger(f'Conteúdo com DRM encontrado, pode ter dados importantes, download em: {path}', warning=True)
 
 

@@ -88,6 +88,7 @@ class SilentLogger(object):
     pass
 
   def warning(self, msg):
+    if 'If this is a livestream,' in str(msg):return
     logger(msg, warning=True)
 
   def error(self, msg):
