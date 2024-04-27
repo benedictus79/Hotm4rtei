@@ -36,7 +36,7 @@ def create_folder(folder_name):
 def clear_folder_name(name, is_file=None, ext=''):
   if is_file:
     name, ext = os.path.splitext(name)
-  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', '', name).strip()
+  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', ' ', name).strip()
   return sanitized_base + ext if ext else sanitized_base
 
 

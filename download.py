@@ -20,6 +20,8 @@ def ytdlp_options(output_folder, session=None):
     'continuedl': True,
     'extractor_retries': 30,
     'trim_file_name': 249,
+    'hls_use_mpegts': True,
+    'hls_prefer_native': False,
   }
   if session:
     options['http_headers'] = session.headers
