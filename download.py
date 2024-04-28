@@ -15,12 +15,11 @@ def ytdlp_options(output_folder, session=None):
     'logger': SilentLogger(),
     'concurrent_fragment_downloads': 10,
     'fragment_retries': 50,
-    'file_access_retries': 10,
-    'retries': 30,
+    'file_access_retries': 50,
+    'retries': 50,
     'continuedl': True,
-    'extractor_retries': 30,
+    'extractor_retries': 50,
     'trim_file_name': 249,
-    'hls_prefer_native': {'m3u8': 'ffmpeg'},
   }
   if session:
     options['http_headers'] = session.headers
