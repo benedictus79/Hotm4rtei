@@ -4,7 +4,7 @@ import threading
 from tqdm import tqdm
 from connection import connect
 from login import hotmartsession, course_name, token, BeautifulSoup
-from utils import datetime, clear_folder_name, concat_path, create_folder, logger, remove_file, shorten_folder_name
+from utils import datetime, clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
 from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, process_complementary_readings, process_webinar, save_html, url_conveter_pandavideo, pandavideoheaders
 
 
@@ -99,7 +99,7 @@ def find_video(lesson_video):
     return return_data
 
 
-def process_media(path, medias):
+def process_media_download(path, medias):
   for i, media in enumerate(medias, start=1):
     lesson_video = connect(media, hotmartsession)
     lesson_video = find_video(lesson_video)
@@ -119,27 +119,46 @@ def process_iframe(soup, path, iframe):
     save_html(content_folder, soup)
 
 
-def process_lesson(lesson_name, lesson_info):
-  if lesson_info['media']:
-    videos_urls = [item['mediaSrcUrl'] for item in lesson_info['media']]
-    process_media(lesson_info['path'], videos_urls)
-  if lesson_info['attachments']:
-    attachments_data = [(item['fileMembershipId'], item['fileName']) for item in lesson_info['attachments']]
-    find_attachments(lesson_info['path'], attachments_data)
-  if lesson_info.get('webinar'):
-    find_webinar(lesson_info['path'], lesson_info['webinar'])
-  if lesson_info['complementary_readings']:
-    complementary_readings_data = [(item['articleUrl'], item['articleName']) for item in lesson_info['complementary_readings']]
-    find_complementary_readings(lesson_info['path'], complementary_readings_data, hotmartsession)
-  if lesson_info.get('content'):
-    soup = BeautifulSoup(lesson_info['content'], 'html.parser')
-    iframe = soup.find('iframe')
-    process_iframe(soup, lesson_info['path'], iframe)
+def process_media(lesson_path, media):
+  videos_urls = [item['mediaSrcUrl'] for item in media]
+  process_media_download(lesson_path, videos_urls)
 
+def process_attachments(lesson_path, attachments):
+  attachments_data = [(item['fileMembershipId'], item['fileName']) for item in attachments]
+  find_attachments(lesson_path, attachments_data)
+
+def process_webinar(lesson_path, webinar):
+  find_webinar(lesson_path, webinar)
+
+def process_readings(lesson_path, readings):
+  readings_data = [(item['articleUrl'], item['articleName']) for item in readings]
+  find_complementary_readings(lesson_path, readings_data, hotmartsession)
+
+def process_content(lesson_path, content):
+  soup = BeautifulSoup(content, 'html.parser')
+  iframe = soup.find('iframe')
+  process_iframe(soup, lesson_path, iframe)
+
+def process_lesson(lesson_name, lesson_info):
+  task_mapping = {
+    'media': (process_media, lesson_info['path'], lesson_info.get('media')),
+    'attachments': (process_attachments, lesson_info['path'], lesson_info.get('attachments')),
+    'webinar': (process_webinar, lesson_info['path'], lesson_info.get('webinar')),
+    'complementary_readings': (process_readings, lesson_info['path'], lesson_info.get('complementary_readings'), hotmartsession),
+    'content': (process_content, lesson_info['path'], lesson_info.get('content'))
+  }
+
+  with ThreadPoolExecutor(max_workers=5) as executor:
+    futures = []
+    for key, (func, *args) in task_mapping.items():
+      if lesson_info.get(key):
+        future = executor.submit(func, *args)
+        futures.append(future)
+    for future in futures:
+      future.result()
 
 def process_lessons_details(lessons, course_name):
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
-      
   with ThreadPoolExecutor(max_workers=3) as executor:
     for lesson_name, lesson_info in lessons.items():
       executor.submit(process_lesson, lesson_name, lesson_info)
