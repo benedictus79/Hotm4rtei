@@ -6,14 +6,17 @@ on:
   pull_request:
     branches: [ compiled ]
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2  # Atualizado para v2
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2  # Atualizado para v2
         with:
           python-version: '3.12.3'
           architecture: 'x64'
@@ -32,7 +35,7 @@ jobs:
         with:
           name: 'hotm4rtei v1.3'
           path: dist/hotm4rtei v1.3.exe
-      - name: create release
+      - name: Create release
         id: create_release
         uses: actions/create-release@v1
         env:
