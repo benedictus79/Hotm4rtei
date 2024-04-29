@@ -21,6 +21,10 @@ jobs:
         run: |
           pip install PyInstaller
           pip install -r requirements.txt
+      - name: Modify pkg_resources
+        run: |
+          $path = "C:\hostedtoolcache\windows\Python\3.12.3\x64\Lib\site-packages\pkg_resources\__init__.py"
+          (Get-Content $path) -replace 'ImpImporter', 'zipimporter' | Set-Content $path
       - name: Run PyInstaller
         run: |
           python -m PyInstaller main.spec
@@ -28,7 +32,6 @@ jobs:
         with:
           name: 'hotm4rtei v1.3'
           path: dist/hotm4rtei v1.3.exe
-
       - name: create release
         id: create_release
         uses: actions/create-release@v1
@@ -47,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: dist/hotm4rtei v1.3.exe.exe
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/hotm4rtei v1.3.exe
           asset_name: Hotm4rtei-Windows-amd64.exe
           asset_content_type: application/zip
