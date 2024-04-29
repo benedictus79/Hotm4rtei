@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
-CURSOS/
-teste.py
-teste2.py
-teste.txt
+build/
+dist/
+main.spec
+hotmartei.ico
+telegram.txt

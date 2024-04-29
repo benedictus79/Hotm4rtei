@@ -23,7 +23,7 @@ def ytdlp_options(output_folder, session=None):
   }
   if session:
     options['http_headers'] = session.headers
-
+  
   return options
 
 
@@ -43,12 +43,15 @@ def download_with_ffmpeg(decryption_key, name_lesson, url):
 
 
 def download_with_ytdlp(ydl_opts, media):
-  try:
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-      ydl.download([media])
-  except yt_dlp.utils.DownloadError as e:
-    msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}'''
-    logger(msg, warning=True)
+  while True:
+    try:
+      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([media])
+        return
+    except yt_dlp.utils.DownloadError as e:
+      msg = f'''Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}'''
+      logger(msg, warning=True)
+      return
 
 
 def process_webinar(webinar_folder, index, webinar, session):
@@ -131,9 +134,9 @@ def download_video(path, index, lesson_video, session):
   if 'drm/' in lesson_video['url']:
     response = connect(lesson_video['url'], session)
     pssh = get_pssh(response)
-    license = get_license(lesson_video, session)
+    license_url = get_license(lesson_video, session)
     wv_data = {
-      'license': license,
+      'license': license_url,
       'pssh': pssh
     }
     decryption_key = get_key_drm(wv_data)
@@ -146,9 +149,10 @@ def download_video(path, index, lesson_video, session):
   return download_with_ytdlp(ydl_opts, lesson_video['url'])
 
 
-def download_file(path, attachments):
+def download_file(path, attachments, drm=None):
   path = shorten_folder_name(path)
   if not os.path.exists(path):
+    if drm:logger(f'Conteúdo com DRM encontrado, pode ter dados importantes, download em: {path}', warning=True)
     with open(path, 'wb') as file:
       for chunk in attachments.iter_content(chunk_size=8192):
         file.write(chunk)
@@ -167,8 +171,7 @@ def download_attachments(material_folder, attachment_id, attachment_name, sessio
     attachments_url = connect('https://drm-protection.cb.hotmart.com', session).text
     attachments = requests.get(attachments_url, stream=True)
     path = concat_path(material_folder, clear_folder_name(attachment_name, is_file=True))
-    download_file(path, attachments)
-    logger(f'Conteúdo com DRM encontrado, pode ter dados importantes, download em: {path}', warning=True)
+    download_file(path, attachments, drm=True)
 
 
 def save_html(content_folder, html):
@@ -196,10 +199,9 @@ def is_vimeo_iframe(iframe):
   return iframe is not None and 'src' in iframe.attrs and 'vimeo' in iframe['src']
 
 
-pandavideoheaders = lambda rerefer, optional_origin=None: {
+pandavideoheaders = lambda rerefer: {
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Referer': rerefer,
-  **({'Origin': optional_origin} if optional_origin is not None else {})
 }
 
 

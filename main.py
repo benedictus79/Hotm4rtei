@@ -89,12 +89,12 @@ def find_video(lesson_video):
     clubMembershipId = application_data.get('clubMembershipId', '')
     
     return_data = {
-        'url': preferred_url,
-        'signature': signature,
-        'mediaCode': mediaCode,
-        'userCode': userCode,
-        'applicationKey': applicationKey,
-        'clubMembershipId': clubMembershipId,
+      'url': preferred_url,
+      'signature': signature,
+      'mediaCode': mediaCode,
+      'userCode': userCode,
+      'applicationKey': applicationKey,
+      'clubMembershipId': clubMembershipId,
     }
     return return_data
 
@@ -123,29 +123,34 @@ def process_media(lesson_path, media):
   videos_urls = [item['mediaSrcUrl'] for item in media]
   process_media_download(lesson_path, videos_urls)
 
+
 def process_attachments(lesson_path, attachments):
   attachments_data = [(item['fileMembershipId'], item['fileName']) for item in attachments]
   find_attachments(lesson_path, attachments_data)
 
+
 def process_webinar(lesson_path, webinar):
   find_webinar(lesson_path, webinar)
+
 
 def process_readings(lesson_path, readings):
   readings_data = [(item['articleUrl'], item['articleName']) for item in readings]
   find_complementary_readings(lesson_path, readings_data, hotmartsession)
+
 
 def process_content(lesson_path, content):
   soup = BeautifulSoup(content, 'html.parser')
   iframe = soup.find('iframe')
   process_iframe(soup, lesson_path, iframe)
 
+
 def process_lesson(lesson_name, lesson_info):
   task_mapping = {
-    'media': (process_media, lesson_info['path'], lesson_info.get('media')),
-    'attachments': (process_attachments, lesson_info['path'], lesson_info.get('attachments')),
-    'webinar': (process_webinar, lesson_info['path'], lesson_info.get('webinar')),
-    'complementary_readings': (process_readings, lesson_info['path'], lesson_info.get('complementary_readings'), hotmartsession),
-    'content': (process_content, lesson_info['path'], lesson_info.get('content'))
+    'media': (process_media, lesson_info.get('path'), lesson_info.get('media')),
+    'attachments': (process_attachments, lesson_info.get('path'), lesson_info.get('attachments')),
+    'webinar': (process_webinar, lesson_info.get('path'), lesson_info.get('webinar')),
+    'complementary_readings': (process_readings, lesson_info.get('path'), lesson_info.get('complementary_readings'), hotmartsession),
+    'content': (process_content, lesson_info.get('path'), lesson_info.get('content'))
   }
 
   with ThreadPoolExecutor(max_workers=5) as executor:
@@ -156,6 +161,7 @@ def process_lesson(lesson_name, lesson_info):
         futures.append(future)
     for future in futures:
       future.result()
+
 
 def process_lessons_details(lessons, course_name):
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
@@ -186,6 +192,7 @@ def list_modules(course_name, modules):
     for future in tqdm(as_completed(futures), total=len(futures), desc=course_name, leave=True):
       future.result()
 
+
 def redirect_club_hotmart(course_name, access_token):
   hotmartsession.headers['authorization'] = f'Bearer {access_token}'
   hotmartsession.headers['club'] = course_name
@@ -207,3 +214,4 @@ if __name__ == '__main__':
   redirect_club_hotmart(course_name, token)
   end_time = datetime.now()
   print(f'Fim da execução: {end_time.strftime("%Y-%m-%d %H:%M:%S")}')
+  input("Pressione Enter para fechar...")
