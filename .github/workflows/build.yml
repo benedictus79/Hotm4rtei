@@ -42,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: 'v1.0.0'
-          release_name: 'Update build.yml'
+          release_name: 'hotm4rtei release'
           body: |
             Test Release v1.0.0
           draft: false
