@@ -75,14 +75,6 @@ def random_sleep():
   sleep(random.randint(3, 7))
 
 
-def remove_file(file_path):
-  try:
-    os.remove(file_path)
-  except OSError as e:
-    msg = f"Erro ao remover o arquivo '{file_path}': {e.strerror}"
-    logger(msg, error=True)
-
-
 class SilentLogger(object):
   def debug(self, msg):
     pass
