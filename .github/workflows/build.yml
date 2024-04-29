@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.increment_tag.outputs.new_tag }}
-          release_name: 'Release ${ { steps.increment_tag.outputs.new_tag } }'
+          release_name: 'Release ${{ steps.increment_tag.outputs.new_tag }}'
           body: 'Automatic release of version ${{ steps.increment_tag.outputs.new_tag }}'
           draft: false
           prerelease: false
