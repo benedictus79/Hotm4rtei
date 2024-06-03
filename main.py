@@ -5,7 +5,7 @@ from tqdm import tqdm
 from connection import connect
 from login import hotmartsession, course_name, token, BeautifulSoup
 from utils import datetime, clear_folder_name, concat_path, create_folder, logger, shorten_folder_name
-from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, process_complementary_readings, process_webinar, save_html, url_conveter_pandavideo, pandavideoheaders
+from download import download_attachments, download_complementary, download_video, is_pandavideo_iframe, is_vimeo_iframe, is_youtube_iframe, process_complementary_readings, process_webinar, save_html, url_conveter_pandavideo, pandavideoheaders
 
 
 def extract_lessons_details(module_folder, lessons):
@@ -112,6 +112,11 @@ def process_iframe(soup, path, iframe):
     find_content(path, video_url, hotmartsession)
   elif iframe and is_pandavideo_iframe(iframe):
     video_url = [url_conveter_pandavideo(iframe['src'])]
+    hotmartsession.headers.update(pandavideoheaders(iframe['src']))
+    find_content(path, video_url, hotmartsession)
+  elif iframe and is_youtube_iframe(iframe):
+    print('chegou a qui', iframe['src'])
+    video_url = [iframe['src']]
     hotmartsession.headers.update(pandavideoheaders(iframe['src']))
     find_content(path, video_url, hotmartsession)
   else:
