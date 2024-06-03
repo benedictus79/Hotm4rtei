@@ -2,9 +2,9 @@ name: Build Workflow
 
 on:
   push:
-    branches: compiled
+    branches: main
   pull_request:
-    branches: [ compiled ]
+    branches: [ main ]
 
 permissions:
   contents: write
