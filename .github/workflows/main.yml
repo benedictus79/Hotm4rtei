@@ -12,39 +12,51 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Install Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.12.3'
           architecture: 'x64'
+
       - name: Install requirements
         run: |
           pip install PyInstaller
           pip install -r requirements.txt
+
       - name: Modify pkg_resources
         run: |
           $path = "C:\hostedtoolcache\windows\Python\3.12.3\x64\Lib\site-packages\pkg_resources\__init__.py"
           (Get-Content $path) -replace 'ImpImporter', 'zipimporter' | Set-Content $path
+
       - name: Run PyInstaller
         run: |
           python -m PyInstaller --onefile --name hotm4rtei main.py
-      - uses: actions/upload-artifact@v2
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
         with:
           name: Hotm4rtei
           path: dist/hotm4rtei.exe
-      - name: Fetch all tags
-        run: git fetch --tags
+
+      - name: Generate Tag
+        id: generate_tag
+        run: |
+          echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+        shell: bash
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.head_commit.message }}
+          tag_name: ${{ steps.generate_tag.outputs.tag }}
           release_name: 'Hotm4rtei'
           body: 'Automatic release of version'
           draft: false
           prerelease: false
+
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
