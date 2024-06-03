@@ -42,7 +42,7 @@ jobs:
       - name: Generate Tag
         id: generate_tag
         run: |
-          echo "::set-output name=tag::$(date +'%Y%m%d%H%M%S')"
+          echo "TAG=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
         shell: bash
 
       - name: Create Release
