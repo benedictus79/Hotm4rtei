@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-            tag_name: ${{ env.TAG }}
+          tag_name: ${{ env.TAG }}
           release_name: 'Hotm4rtei'
           body: 'Automatic release of version'
           draft: false
