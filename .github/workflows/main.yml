@@ -32,7 +32,8 @@ jobs:
         with:
           name: Hotm4rtei
           path: dist/hotm4rtei.exe
-
+      - name: Fetch all tags
+        run: git fetch --tags
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
