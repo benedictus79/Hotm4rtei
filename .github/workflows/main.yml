@@ -21,6 +21,10 @@ jobs:
         run: |
           pip install PyInstaller
           pip install -r requirements.txt
+      - name: Modify pkg_resources
+        run: |
+          $path = "C:\hostedtoolcache\windows\Python\3.12.3\x64\Lib\site-packages\pkg_resources\__init__.py"
+          (Get-Content $path) -replace 'ImpImporter', 'zipimporter' | Set-Content $path
       - name: Run PyInstaller
         run: |
           python -m PyInstaller --onefile --name hotm4rtei main.py
