@@ -12,17 +12,19 @@ def ytdlp_options(output_folder, session=None):
     'outtmpl': f'{output_folder}.%(ext)s',
     'quiet': True,
     'no_progress': True,
+    'windows_filenames': True,
+    'continuedl': True,
     'logger': SilentLogger(),
     'concurrent_fragment_downloads': 10,
+    'retry_sleep_functions': {'fragment': 30},
     'fragment_retries': 50,
     'file_access_retries': 50,
     'retries': 50,
-    'continuedl': True,
     'extractor_retries': 50,
     'trim_file_name': 249,
   }
   if session:
-    options['http_headers'] = session.headers
+    options['http_headers'] = {'referer': session.headers['referer']}
   
   return options
 
@@ -197,6 +199,14 @@ def download_complementary(complementary_folder, complementary, session=None):
 
 def is_vimeo_iframe(iframe):
   return iframe is not None and 'src' in iframe.attrs and 'vimeo' in iframe['src']
+
+def complete_youtube_url(url):
+    if not url.startswith("http"):
+        url = "https:" + url
+    return url
+
+def is_youtube_iframe(iframe):
+  return iframe is not None and 'src' in iframe.attrs and 'you' in complete_youtube_url(iframe['src'])
 
 
 pandavideoheaders = lambda rerefer: {

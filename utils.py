@@ -12,7 +12,7 @@ def benedictus_ascii_art():
     | __ | (_) || | | |\/| |_  _|   / | | | _| | | 
     |_||_|\___/ |_| |_|  |_| |_||_|_\ |_| |___|___|
     
-  Author: Benedictus ©
+  Author: Benedictus | vinitemaceta
   Community: https://t.me/+7imfib1o0CQwNmUx
   Script: {name}
   Version: {version}
