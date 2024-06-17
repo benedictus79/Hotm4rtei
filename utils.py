@@ -12,12 +12,12 @@ def benedictus_ascii_art():
     | __ | (_) || | | |\/| |_  _|   / | | | _| | | 
     |_||_|\___/ |_| |_|  |_| |_||_|_\ |_| |___|___|
     
-  Author: Benedictus | vinitemaceta
-  Community: https://t.me/+7imfib1o0CQwNmUx
+  Author: Alex4ndria Team
+  Community: https://t.me/+DoZ_EeKWN0NhY2Ix
   Script: {name}
   Version: {version}
   """
-  print(benedictus.format(name='hotm4rtei', version='Legend 1.3'))
+  print(benedictus.format(name='hotm4rtei', version='Legend 2.0'))
 
 
 def clear_screen():
@@ -33,11 +33,10 @@ def create_folder(folder_name):
   return path
 
 
-def clear_folder_name(name, is_file=None, ext=''):
-  if is_file:
-    name, ext = os.path.splitext(name)
-  sanitized_base = re.sub(r'[<>:."/\\|?*]|\s+|\.$', ' ', name).strip()
-  return sanitized_base + ext if ext else sanitized_base
+def clear_folder_name(name):
+  sanitized_name = re.sub(r'[<>:"/\\|?*]|\s+', ' ', name).strip()
+  sanitized_name = re.sub(r'\.+$', '', sanitized_name)
+  return sanitized_name
 
 
 def shorten_folder_name(full_path, max_length=241):
@@ -47,15 +46,6 @@ def shorten_folder_name(full_path, max_length=241):
   base_name, extension = os.path.splitext(file_name)
   base_name = base_name[:max_length - len(directory) - len(extension) - 1]
   return os.path.join(directory, base_name + extension)
-
-
-def concat_path(path, subpath, lesson=None):
-  fullpath = os.path.join(path, subpath)
-
-  if lesson:
-    fullpath = os.path.join(path, subpath, lesson)
-
-  return fullpath
 
 
 def log_to_file(filename, message):
@@ -76,15 +66,15 @@ def random_sleep():
 
 
 class SilentLogger(object):
+  def __init__(self, url=None, output_path=None):
+    self.url = url
+    self.output_path = output_path
+
   def debug(self, msg):
     pass
 
   def warning(self, msg):
-    if 'If this is a livestream,' in str(msg):return
-    logger(msg, warning=True)
+    logger(f"WARNING: {msg} - URL: {self.url}, Path: {self.output_path}")
 
   def error(self, msg):
-    if 'HTTP Error 403' in str(msg):return
-    if 'No such file or directory' in str(msg):return
-    logger(msg, error=True)
-
+    logger(f"ERROR: {msg} - URL: {self.url}, Path: {self.output_path}")
