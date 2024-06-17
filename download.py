@@ -210,7 +210,7 @@ def get_key_drm(data):
   json_data = {
     'PSSH': pssh,
     'License URL': license_url,
-    'Headers': "{\n'accept': '*/*',\n'accept-language': 'pt-BR,pt;q=0.7',\n'cache-control': 'no-cache',\n'content-type': 'application/octet-stream',\n'keysystem': 'com.widevine.alpha',\n'membership': '4f449690-ddb4-4ee1-86f2-75332a0cc63c',\n'origin': 'https://cf-embed.play.hotmart.com',\n'pragma': 'no-cache',\n'priority': 'u=1, i',\n'referer': 'https://cf-embed.play.hotmart.com/',\n'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',\n}",
+    'Headers': "{\n'accept': '*/*',\n'accept-language': 'pt-BR,pt;q=0.7',\n'cache-control': 'no-cache',\n'content-type': 'application/octet-stream',\n'keysystem': 'com.widevine.alpha',\n'origin': 'https://cf-embed.play.hotmart.com',\n'pragma': 'no-cache',\n'priority': 'u=1, i',\n'referer': 'https://cf-embed.play.hotmart.com/',\n'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',\n}",
     'JSON': '',
     'Cookies': '',
     'Data': '',
