@@ -12,7 +12,6 @@ def ytdlp_options(output_folder, session=None):
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'quiet': True,
     'continuedl': True,
-    'overwrites': False,
     'no_progress': True,
     'windows_filenames': True,
     'retries': 50,
@@ -29,35 +28,35 @@ def ytdlp_options(output_folder, session=None):
 
 
 def download_with_ffmpeg(decryption_key, name_lesson, url):
-  if not os.path.exists(f'{name_lesson}.mp4'):
-    cmd = [
-      'ffmpeg',
-      '-cenc_decryption_key', decryption_key,
-      '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
-      '-y',
-      '-i', url,
-      '-codec', 'copy',
-      '-threads', '4',
-      f'{name_lesson}.mp4'
-    ]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-      error_message = f'Erro ao baixar a aula {name_lesson}: {result.stderr.decode()}'
-      logger(error_message, error=True)
+  cmd = [
+    'ffmpeg',
+    '-cenc_decryption_key', decryption_key,
+    '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
+    '-y',
+    '-i', url,
+    '-codec', 'copy',
+    '-threads', '4',
+    f'{name_lesson}.mp4'
+  ]
+  result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  if result.returncode != 0:
+    error_message = f'Erro ao baixar a aula {name_lesson}: {result.stderr.decode()}'
+    logger(error_message, error=True)
 
-    return result
+  return result
 
 
 def download_with_ytdlp(ydl_opts, media):
-  while True:
-    try:
-      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([media])
+  if not os.path.exists(ydl_opts['outtmpl']):
+    while True:
+      try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+          ydl.download([media])
+          return
+      except yt_dlp.utils.DownloadError as e:
+        msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
+        logger(msg, warning=True)
         return
-    except yt_dlp.utils.DownloadError as e:
-      msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
-      logger(msg, warning=True)
-      return
 
 
 def get_video_platform(iframe):
@@ -229,7 +228,7 @@ def get_key_drm(data):
     'Sec-Fetch-Site': 'same-origin',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
   }
-  decryption_results = requests.post(api_url, json=json_data, headers=headers)
+  decryption_results = requests.post(api_url, json=json_data, headers=headers, timeout=80)
   decryption_key = decryption_results.json()['Message'].split(':')[1].strip()
   return decryption_key
 
@@ -246,8 +245,10 @@ def download_video(path, index, lesson_video, session):
     decryption_key = get_key_drm(wv_data)
     name_lesson = shorten_folder_name(os.path.join(path, f' {index:03} - aula'))
     logger(f'''Conteúdo com DRM encontrado, pode ter dados importantes, tentando download com FFMPEG: {name_lesson} ||| {lesson_video['url']} |||| {decryption_key}''', warning=True)
-    return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
+    if not (os.path.exists(f'{name_lesson}.mp4')):
+      return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
   output = shorten_folder_name(os.path.join(path, f'{index:03} - aula'))
   ydl_opts = ytdlp_options(output)
   ydl_opts['http_headers'] = {'referer': 'https://cf-embed.play.hotmart.com/'}
-  return download_with_ytdlp(ydl_opts, lesson_video['url'])
+  if not (os.path.exists(f'{output}.mp4') or os.path.exists(f'{output}.m4a')):
+    return download_with_ytdlp(ydl_opts, lesson_video['url'])
