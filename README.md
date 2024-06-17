@@ -36,7 +36,6 @@ After installing all dependencies, you can run the script with the following com
 For questions or support, please feel free to contact us or ask in the issues section.
 
 - **Email**: [Email Contact](mailto:benedictus79@disroot.org)
-- **Telegram**: [Telegram Contact](https://t.me/benedictus79)
 - **Telegram Community**: [Telegram Community](https://t.me/+DoZ_EeKWN0NhY2Ix)
 
 ## Contributions
