@@ -28,23 +28,22 @@ def ytdlp_options(output_folder, session=None):
 
 
 def download_with_ffmpeg(decryption_key, name_lesson, url):
-  if not os.path.exists(f'{name_lesson}.mp4'):
-    cmd = [
-      'ffmpeg',
-      '-cenc_decryption_key', decryption_key,
-      '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
-      '-y',
-      '-i', url,
-      '-codec', 'copy',
-      '-threads', '4',
-      f'{name_lesson}.mp4'
-    ]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-      error_message = f'Erro ao baixar a aula {name_lesson}: {result.stderr.decode()}'
-      logger(error_message, error=True)
+  cmd = [
+    'ffmpeg',
+    '-cenc_decryption_key', decryption_key,
+    '-headers', 'Referer: https://cf-embed.play.hotmart.com/',
+    '-y',
+    '-i', url,
+    '-codec', 'copy',
+    '-threads', '4',
+    f'{name_lesson}.mp4'
+  ]
+  result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  if result.returncode != 0:
+    error_message = f'Erro ao baixar a aula {name_lesson}: {result.stderr.decode()}'
+    logger(error_message, error=True)
 
-    return result
+  return result
 
 
 def download_with_ytdlp(ydl_opts, media):
@@ -246,8 +245,10 @@ def download_video(path, index, lesson_video, session):
     decryption_key = get_key_drm(wv_data)
     name_lesson = shorten_folder_name(os.path.join(path, f' {index:03} - aula'))
     logger(f'''Conteúdo com DRM encontrado, pode ter dados importantes, tentando download com FFMPEG: {name_lesson} ||| {lesson_video['url']} |||| {decryption_key}''', warning=True)
-    return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
+    if not (os.path.exists(f'{name_lesson}.mp4')):
+      return download_with_ffmpeg(decryption_key, name_lesson, lesson_video['url'])
   output = shorten_folder_name(os.path.join(path, f'{index:03} - aula'))
   ydl_opts = ytdlp_options(output)
   ydl_opts['http_headers'] = {'referer': 'https://cf-embed.play.hotmart.com/'}
-  return download_with_ytdlp(ydl_opts, lesson_video['url'])
+  if not (os.path.exists(f'{output}.mp4') or os.path.exists(f'{output}.m4a')):
+    return download_with_ytdlp(ydl_opts, lesson_video['url'])
