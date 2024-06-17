@@ -12,6 +12,7 @@ def ytdlp_options(output_folder, session=None):
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'quiet': True,
     'continuedl': True,
+    'overwrites': False,
     'no_progress': True,
     'windows_filenames': True,
     'retries': 50,
