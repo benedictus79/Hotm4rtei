@@ -12,7 +12,6 @@ def ytdlp_options(output_folder, session=None):
     'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'quiet': True,
     'continuedl': True,
-    'overwrites': False,
     'no_progress': True,
     'windows_filenames': True,
     'retries': 50,
@@ -49,15 +48,16 @@ def download_with_ffmpeg(decryption_key, name_lesson, url):
 
 
 def download_with_ytdlp(ydl_opts, media):
-  while True:
-    try:
-      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([media])
+  if not os.path.exists(ydl_opts['outtmpl']):
+    while True:
+      try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+          ydl.download([media])
+          return
+      except yt_dlp.utils.DownloadError as e:
+        msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
+        logger(msg, warning=True)
         return
-    except yt_dlp.utils.DownloadError as e:
-      msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
-      logger(msg, warning=True)
-      return
 
 
 def get_video_platform(iframe):
@@ -229,7 +229,7 @@ def get_key_drm(data):
     'Sec-Fetch-Site': 'same-origin',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
   }
-  decryption_results = requests.post(api_url, json=json_data, headers=headers)
+  decryption_results = requests.post(api_url, json=json_data, headers=headers, timeout=80)
   decryption_key = decryption_results.json()['Message'].split(':')[1].strip()
   return decryption_key
 
