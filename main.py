@@ -113,12 +113,14 @@ def process_attachments(path_lesson, attachments):
 
 def process_webinar(lesson_path, webinar):
   if webinar:
+    lesson_path = create_folder(lesson_path)
     find_webinar(lesson_path, webinar, hotmartsession)
 
 
 def process_readings(lesson_path, readings):
   if readings:
     readings_data = [(item['articleUrl'], item['articleName']) for item in readings]
+    lesson_path = create_folder(lesson_path)
     find_complementary_readings(lesson_path, readings_data)
 
 
