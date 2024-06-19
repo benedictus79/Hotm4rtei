@@ -119,7 +119,7 @@ def process_webinar(lesson_path, webinar):
 def process_readings(lesson_path, readings):
   if readings:
     readings_data = [(item['articleUrl'], item['articleName']) for item in readings]
-    find_complementary_readings(lesson_path, readings_data, hotmartsession)
+    find_complementary_readings(lesson_path, readings_data)
 
 
 def process_content(lesson_path, content):
