@@ -17,7 +17,7 @@ def list_lessons(lessons):
       msg = f'Lição bloqueada do módulo: {path_module}'
       logger(msg, warning=True)
       continue
-    lesson_title = f'''{lesson_data['index']:03d} - {clear_folder_name(content_lesson['name'])}'''
+    lesson_title = f'{lesson_data["index"]:03d} - {clear_folder_name(content_lesson["name"])}'
     path_lesson = shorten_folder_name(os.path.join(path_module, lesson_title))
     lesson_name = clear_folder_name(content_lesson['name'])
     lesson_detail[path_lesson] = {
@@ -174,7 +174,7 @@ def list_modules(course_name, modules):
   main_course_folder = create_folder(clear_folder_name(course_name))
   for i, module in enumerate(tqdm(modules, desc='Processing Modules', total=len(modules)), start=1):
     data_module = {}
-    module_title = f'{i:03d} - {clear_folder_name(module['name'])}'
+    module_title = f'{i:03d} - {clear_folder_name(module["name"])}'
     data_module[module_title] = module['pages']
     process_module(main_course_folder, data_module)
 
