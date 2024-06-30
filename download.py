@@ -8,8 +8,9 @@ from utils import SilentLogger, clear_folder_name, logger, os, re, shorten_folde
 def ytdlp_options(output_folder, session=None):
   options = {
     'logger': SilentLogger(),
+    'merge_output_format': 'mp4',
+    'format': 'bestvideo+bestaudio/best',
     'outtmpl': f'{output_folder}.%(ext)s',
-    'format': 'bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best',
     'quiet': True,
     'continuedl': True,
     'no_progress': True,
@@ -22,7 +23,7 @@ def ytdlp_options(output_folder, session=None):
     'concurrent_fragment_downloads': 10,
   }
   if session:
-    options['http_headers'] = {'referer': session.headers['referer']}
+    options['http_headers'] = {'referer': session.headers['referer'], 'Upgrade-Insecure-Requests': '1'}
   
   return options
 
