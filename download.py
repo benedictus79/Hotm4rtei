@@ -14,6 +14,7 @@ def ytdlp_options(output_folder, session=None):
     'quiet': True,
     'continuedl': True,
     'no_progress': True,
+    'no_overwrites': True,
     'windows_filenames': True,
     'retries': 50,
     'trim_file_name': 249,
@@ -48,16 +49,15 @@ def download_with_ffmpeg(decryption_key, name_lesson, url):
 
 
 def download_with_ytdlp(ydl_opts, media):
-  if not os.path.exists(ydl_opts['outtmpl']):
-    while True:
-      try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-          ydl.download([media])
-          return
-      except yt_dlp.utils.DownloadError as e:
-        msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
-        logger(msg, warning=True)
+  while True:
+    try:
+      with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([media])
         return
+    except yt_dlp.utils.DownloadError as e:
+      msg = f"Verifique manualmente, se não baixou tente novamente mais tarde: {ydl_opts['outtmpl']} ||| {media} ||| {e}"
+      logger(msg, warning=True)
+      return
 
 
 def get_video_platform(iframe):
@@ -251,5 +251,4 @@ def download_video(path, index, lesson_video, session):
   output = shorten_folder_name(os.path.join(path, f'{index:03} - aula'))
   ydl_opts = ytdlp_options(output)
   ydl_opts['http_headers'] = {'referer': 'https://cf-embed.play.hotmart.com/'}
-  if not (os.path.exists(f'{output}.mp4') or os.path.exists(f'{output}.m4a')):
-    return download_with_ytdlp(ydl_opts, lesson_video['url'])
+  return download_with_ytdlp(ydl_opts, lesson_video['url'])
