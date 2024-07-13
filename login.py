@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from utils import benedictus_ascii_art, clear_screen, logger, random_sleep
+from utils import os, benedictus_ascii_art, clear_screen, logger
 
 
 hotmartsession = requests.Session()
@@ -60,11 +60,16 @@ def choose_course(courses):
   selected_course_title = list(courses.keys())[int(choice) - 1]
   selected_course_link = courses[selected_course_title]
   print(f'Link curso selecionado:', selected_course_link)
+  print(f'O tamanho da pasta pode ocasionar erros devido a diretórios muito longos.')
+  print(f'É opcional. Caso não coloque nada ou pasta inexistente, o download será feito na pasta tools.')
+  selected_course_folder = input(f'Escolha a pasta para download: ').strip()
+  if selected_course_folder == '' or not os.path.exists(selected_course_folder):
+    selected_course_folder = os.getcwd()
   
-  return selected_course_title, selected_course_link
+  return selected_course_title, selected_course_link, selected_course_folder
 
 username, password = credentials()
 url_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/token'
 token = get_token(url_token, username, password)
 courses = check_token(token)
-course_name, course_link = choose_course(courses)
+course_name, course_link, selected_folder = choose_course(courses)
