@@ -1,15 +1,15 @@
 import json
 from tqdm import tqdm
 from connection import connect
-from concurrent.futures import ThreadPoolExecutor
-from login import hotmartsession, course_name, token, BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from login import hotmartsession, course_name, selected_folder, token, BeautifulSoup
 from download import download_attachments, download_complementary, download_video, download_webinar, get_video_platform, process_complementary_readings, save_html
 from utils import os, datetime, clear_folder_name, create_folder, logger, shorten_folder_name
 
 
 def list_lessons(lessons):
-  lesson_detail = {}
   for path_module, lesson_data in lessons.items():
+    lesson_detail = {}
     lesson_hash = lesson_data['lessons'][0]
     url = f"https://api-club.cb.hotmart.com/rest/v3/page/{lesson_hash}?pageHash={lesson_hash}"
     content_lesson = connect(url, hotmartsession).json()
@@ -160,7 +160,7 @@ def extract_lessons_details(path, lessons):
       data_lesson[path_module] = {'index': i, 'lessons': hashes}
       future = executor.submit(list_lessons, data_lesson)
       futures.append(future)
-    for future in futures:
+    for future in as_completed(futures):
       future.result()
 
 
@@ -170,8 +170,10 @@ def process_module(main_course_folder, data):
     extract_lessons_details(path_module, module_data)
 
 
-def list_modules(course_name, modules):
-  main_course_folder = create_folder(clear_folder_name(course_name))
+def list_modules(selected_folder, course_name, modules):
+  if selected_folder == '' or not os.path.exists(selected_folder):
+    selected_folder = os.getcwd()
+  main_course_folder = create_folder(os.path.join(selected_folder, clear_folder_name(course_name)))
   for i, module in enumerate(tqdm(modules, desc='Processing Modules', total=len(modules)), start=1):
     data_module = {}
     module_title = f'{i:03d} - {clear_folder_name(module["name"])}'
@@ -179,7 +181,7 @@ def list_modules(course_name, modules):
     process_module(main_course_folder, data_module)
 
 
-def redirect_club_hotmart(course_name, access_token):
+def redirect_club_hotmart(selected_folder, course_name, access_token):
   hotmartsession.headers['authorization'] = f'Bearer {access_token}'
   hotmartsession.headers['club'] = course_name
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
@@ -192,13 +194,13 @@ def redirect_club_hotmart(course_name, access_token):
   if modules_locked_names:
     msg_erro = f'Curso: {course_name} - Modulos Bloqueados: {modules_locked_names}'
     logger(msg_erro, warning=True)
-  list_modules(course_name, filtered_modules)
+  list_modules(selected_folder, course_name, filtered_modules)
 
 
 if __name__ == '__main__':
   start_time = datetime.now()
   print(f'Início da execução: {start_time.strftime("%Y-%m-%d %H:%M:%S")}')
-  redirect_club_hotmart(course_name, token)
+  redirect_club_hotmart(selected_folder, course_name, token)
   end_time = datetime.now()
   print(f'Fim da execução: {end_time.strftime("%Y-%m-%d %H:%M:%S")}')
   input("Pressione Enter para fechar...")
