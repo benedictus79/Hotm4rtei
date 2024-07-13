@@ -21,7 +21,7 @@ def ytdlp_options(output_folder, session=None):
     'fragment_retries': 50,
     'extractor_retries': 50,
     'file_access_retries': 50,
-    'concurrent_fragment_downloads': 7,
+    'concurrent_fragment_downloads': 10,
   }
   if session:
     options['http_headers'] = {'referer': session.headers['referer'], 'Upgrade-Insecure-Requests': '1'}
