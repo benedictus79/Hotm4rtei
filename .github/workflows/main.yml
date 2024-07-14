@@ -37,15 +37,15 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags
 
-      - name: Get latest 2.1.X tag and increment
+      - name: Get latest 2.2.X tag and increment
         id: increment_tag
         run: |
-          TAG=$(git tag --list '2.1.*' | sort -V | tail -n1)
+          TAG=$(git tag --list '2.2.*' | sort -V | tail -n1)
           if [[ -z "$TAG" ]]; then
-            echo "::set-output name=new_tag::2.1.0"
+            echo "::set-output name=new_tag::2.2.0"
           else
             NEXT_NUM=$(echo $TAG | awk -F '.' '{print $3+1}')
-            echo "::set-output name=new_tag::2.1.$NEXT_NUM"
+            echo "::set-output name=new_tag::2.2.$NEXT_NUM"
           fi
         shell: bash
 

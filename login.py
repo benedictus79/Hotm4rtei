@@ -50,21 +50,19 @@ def check_token(access_token):
 
 
 def choose_course(courses):
-  print('Cursos disponíveis:')
+  print('Courses:')
   if courses is None:return None, None
   for i, course_title in enumerate(courses.keys(), start=1):
     print(f'{i}. {course_title}')
 
-  choice = input('Escolha um curso pelo número: ')
+  choice = input('Choose a course by number: ')
   if not choice.isdigit():return None, None
   selected_course_title = list(courses.keys())[int(choice) - 1]
   selected_course_link = courses[selected_course_title]
-  print(f'Link curso selecionado:', selected_course_link)
-  print(f'O tamanho da pasta pode ocasionar erros devido a diretórios muito longos.')
-  print(f'É opcional. Caso não coloque nada ou pasta inexistente, o download será feito na pasta tools.')
-  selected_course_folder = input(f'Escolha a pasta para download: ').strip()
-  if selected_course_folder == '' or not os.path.exists(selected_course_folder):
-    selected_course_folder = os.getcwd()
+  print(f'Selected course link:', selected_course_link)
+  print(f'The folder size may cause errors due to excessively long directories.')
+  print(f'If you do not specify anything or if the folder does not exist, the download will be done in the folder: {os.getcwd()}.')
+  selected_course_folder = input(f'Choose the folder for download: ').strip()
   
   return selected_course_title, selected_course_link, selected_course_folder
 
