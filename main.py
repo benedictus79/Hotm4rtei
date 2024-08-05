@@ -43,7 +43,7 @@ def find_complementary_readings(path, complementary_readings):
   for i, complementary in enumerate(complementary_readings, start=1):
     complementary_url, complementary_name = complementary
     complementary_name = f'{i:03d} - {clear_folder_name(complementary_name)}'
-    complementary_folder = create_folder(shorten_folder_name(os.path.join(path, 'complemento')))
+    complementary_folder = create_folder(shorten_folder_name(os.path.join(path, 'extra')))
     process_complementary_readings(complementary_folder, complementary_url, complementary_name, hotmartsession)
 
 

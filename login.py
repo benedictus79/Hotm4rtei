@@ -15,12 +15,12 @@ def credentials():
 
 
 def get_token(url_token, username, password):
-  data = {
-    'grant_type': 'password',
-    'username': username,
-    'password': password
+  files = {
+    'grant_type': (None, 'password'),
+    'username': (None, username),
+    'password': (None, password)
   }
-  response = hotmartsession.post(url_token, data=data)
+  response = hotmartsession.post(url_token, files=files)
 
   if response.status_code != 200:
     msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
