@@ -25,7 +25,10 @@ def get_token(url_token, username, password):
   if response.status_code != 200:
     msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
     logger(msg_erro, error=True)
-    return None
+    print('Email e senha inválidos')
+    print('Bye bye...')
+    input("Pressione Enter para fechar...")
+    exit()
 
   return response.json()['access_token']
 
@@ -34,10 +37,6 @@ def check_token(access_token):
   params = {'token': access_token}
   url_check_token = 'https://sec-proxy-content-distribution.hotmart.com/club/security/oauth/check_token'
   response = hotmartsession.get(url_check_token, params=params)
-  if response.status_code != 200:
-    msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
-    logger(msg_erro, error=True)
-    return None
   response = response.json()['resources']
   courses = {}
 
