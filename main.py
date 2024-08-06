@@ -186,7 +186,6 @@ def redirect_club_hotmart(selected_folder, course_name, access_token):
   hotmartsession.headers['club'] = course_name
   hotmartsession.headers['referer'] = f'https://{course_name}.club.hotmart.com/'
   response = hotmartsession.get('https://api-club.cb.hotmart.com/rest/v3/navigation')
-  if response.status_code != 200: return print('Bye bye...')
   response = response.json()
   modules = response['modules']
   filtered_modules = [module for module in modules if not module['locked']]
