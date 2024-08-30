@@ -56,7 +56,7 @@ def find_content(path, contents, session):
 def find_attachments(path, attachments):
   for i, attachment in enumerate(attachments, start=1):
     attachment_id, attachment_name = attachment
-    attachment_name = f'{i:03d} - {attachment_name}'
+    attachment_name = f'{i:03d} - {clear_folder_name(attachment_name)}'
     material_folder = create_folder(shorten_folder_name(os.path.join(path, 'material')))
     download_attachments(material_folder, attachment_id, attachment_name, hotmartsession)
 
