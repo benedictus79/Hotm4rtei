@@ -20,7 +20,7 @@ def get_token(url_token, username, password):
     'username': (None, username),
     'password': (None, password)
   }
-  response = hotmartsession.post(url_token, files=files)
+  response = hotmartsession.post(url_token, data=files)
 
   if response.status_code != 200:
     msg_erro = f'Erro ao acessar {response.url}: Status Code {response.status_code}'
