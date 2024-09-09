@@ -137,7 +137,7 @@ def process_iframe(soup, path, iframe):
     find_content(path, video_url, hotmartsession)
   else:
     path = create_folder(path)
-    content_folder = create_folder(shorten_folder_name(os.path.join(path, 'html')))
+    content_folder = create_folder(shorten_folder_name(os.path.join(clear_folder_name(path), 'html')))
     save_html(content_folder, soup)
 
 
